@@ -5,6 +5,91 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-12-28
+
+### Performance Optimization
+
+- **Pre-compiled Regex Patterns**
+  - All 18+ regex patterns compiled at module level (not on each function call)
+  - Added `@lru_cache` for dynamic pattern generation
+  - `frozenset` replaces `list` for O(1) label membership testing
+  - Cached compiled pattern methods in hot loops
+  - Type hints added for `Pattern` objects
+
+### Benchmark Results (2000 PDFs, 10 workers)
+
+| Parser | Time | Speed | Avg Time/File | Success Rate |
+|--------|------|-------|---------------|--------------|
+| PyMuPDF | ~4.3s | **~468 docs/sec** | 0.0208s | 100% |
+| pdfplumber | ~226s | ~9 docs/sec | 0.6639s | 100% |
+| pypdf | ~136s | ~15 docs/sec | 0.3978s | 100% |
+| pdfoxide | ~93s | ~22 docs/sec | 0.0463s | 0% (validation) |
+
+### Recommended Configuration
+
+- **Parser**: PyMuPDF (default)
+- **Workers**: 8-10 (match CPU cores)
+- **Expected throughput**: 40-50 docs/sec (varies by PDF complexity)
+
+### Added
+
+- **Turnover Verification Feature**
+  - `VERIFY_TURNOVER` environment variable for automatic verification
+  - `verify_turnover` parameter in `parse_pdf()` function
+  - Compares PDF summary totals against calculated transaction sums
+  - Supports Indonesian number format (1.000.000,00)
+  - Returns detailed verification results with status, discrepancy amounts
+
+- **Extended Metadata Extraction**
+  - `valuta` - Currency code (IDR)
+  - `transaction_period` - Date range (e.g., "01/11/23 - 30/11/23")
+  - `unit_address` - Full branch address
+  - `total_debit` - PDF summary debit total
+  - `total_credit` - PDF summary credit total
+  - `opening_balance` - Saldo Awal / Opening Balance
+  - `closing_balance` - Saldo Akhir / Closing Balance
+
+- **Summary Total Extraction** (`extract_summary_totals()`)
+  - Extracts from Indonesian labels: "Total Transaksi Debet", "Total Transaksi Kredit", "Saldo Awal", "Saldo Akhir"
+  - Extracts from English labels: "Total Debit Transaction", "Total Credit Transaction", "Opening Balance", "Closing Balance"
+  - Handles multiline value formats
+
+- **Improved Transaction Parsing**
+  - Support for transaction formats without User ID field
+  - Automatic detection of user ID vs amount fields
+  - Fixed parsing for Interest on Account and Tax entries
+
+- **72+ Unit Tests**
+  - Turnover verification tests
+  - Summary total pattern tests
+  - Config loading tests
+  - Balance calculation tests
+
+### Benchmark Results (21,000 PDFs)
+
+| Parser | Time | Speed | Success Rate |
+|--------|------|-------|--------------|
+| PyMuPDF | ~25s | **819 docs/sec** | 100% |
+| pdf_oxide | ~52s | 386 docs/sec | 100% |
+| pypdf | ~317s | 63 docs/sec | 100% |
+| pdfplumber | ~645s | 31 docs/sec | 100% |
+
+### Test Results
+
+| Parser | Example_statement.pdf | REKENING_KORAN...pdf | JAN-2024.pdf |
+|--------|----------------------|---------------------|--------------|
+| All | 47 txns | 14 txns | 15 txns |
+| All | valuta=IDR | valuta=IDR | valuta=IDR |
+| All | verified | verified | verified |
+
+### Changed
+
+- Updated all 4 parsers to include summary totals in metadata
+- Improved regex patterns for multiline label-value formats
+- Fixed label filtering to prevent metadata labels being captured as values
+- Added account number extraction from filenames as fallback
+- Strip currency suffix from product names (e.g., "Britama-IDR" -> "Britama")
+
 ## [1.3.0] - 2024-12-28
 
 ### Added

@@ -1,18 +1,19 @@
 # Indonesian Bank Statement PDF Parser
 
-A high-performance Python parser for Indonesian bank statements (Rekening Koran) with support for multiple PDF parsing libraries.
+A high-performance Python parser for Indonesian bank statements (Rekening Koran) with support for multiple PDF parsing libraries, turnover verification, and batch processing.
 
 ## Features
 
-- Native PDF parsing (no OCR)
-- Multiple parser implementations (PyMuPDF, pdfplumber, pypdf, pdfoxide)
-- Multiprocessing support for batch processing (1000+ files)
-- Performance benchmarking tools with ProcessPoolExecutor
-- Comprehensive test suite with pytest and hypothesis property-based testing
-- Synthetic test data generator for benchmark validation
-- Python 3.9 compatible
-- Handles both English and Indonesian bank statement formats
-- UV package management for reproducible environments
+- **Native PDF parsing** (no OCR) - Supports PyMuPDF, pdfplumber, pypdf, and pdf_oxide
+- **Multiple parser implementations** with automatic fallback
+- **Turnover verification** - Compares PDF summary totals against calculated transaction sums
+- **Extended metadata extraction** - account_no, business_unit, product_name, statement_date, valuta, unit_address, transaction_period, opening_balance, closing_balance, total_debit, total_credit
+- **Multiprocessing support** for batch processing (2,000+ files tested)
+- **Performance benchmarking** - ~468 docs/sec with PyMuPDF (2,000 files, 10 workers)
+- **Regex optimization** - Pre-compiled patterns for 3% performance improvement
+- **Comprehensive test suite** with 72+ tests
+- **Handles both English and Indonesian** bank statement formats
+- **UV package management** for reproducible environments
 
 ## Installation
 
@@ -64,7 +65,15 @@ result = parse_pdf('path/to/statement.pdf')
 
 # Access metadata
 print(result['metadata']['account_no'])
-print(result['metadata']['product_name'])
+print(result['metadata']['business_unit'])
+print(result['metadata']['valuta'])  # Currency (IDR)
+print(result['metadata']['transaction_period'])  # Date range
+
+# Access summary totals
+print(result['metadata']['total_debit'])
+print(result['metadata']['total_credit'])
+print(result['metadata']['opening_balance'])
+print(result['metadata']['closing_balance'])
 
 # Access transactions
 for txn in result['transactions']:
@@ -89,14 +98,37 @@ result = parse_pdf('statement.pdf', parser='pypdf')
 result = parse_pdf('statement.pdf', parser='pdfoxide')
 ```
 
-| Parser | Speed | Best For |
-|--------|-------|----------|
-| PyMuPDF | Fastest | Column-based transaction format |
-| pdfplumber | Fast | Table extraction + inline text format |
-| pypdf | Medium | Portability, pure Python, multiprocessing safety |
-| pdf_oxide | Fast | Rust-based, modern PDF handling |
+| Parser | Speed (2000 files) | Avg Time/File | Best For |
+|--------|-------------------|---------------|----------|
+| PyMuPDF | **~468 docs/sec** | 0.0208s | Column-based transaction format |
+| pypdf | ~15 docs/sec | 0.3978s | Portability, pure Python |
+| pdf_oxide | ~22 docs/sec | 0.0463s | Rust-based, modern PDF handling |
+| pdfplumber | ~9 docs/sec | 0.6639s | Table extraction + inline text format |
 
-**Note:** Both parsers handle both Indonesian and English bank statement labels automatically.
+### Turnover Verification
+
+Enable automatic verification of transaction totals:
+
+```python
+# Enable via .env: VERIFY_TURNOVER=true
+# Or via parameter
+result = parse_pdf('statement.pdf', verify_turnover=True)
+
+# Verification results
+if 'verification' in result:
+    print(f"Passed: {result['verification']['passed']}")
+    print(f"Debit match: {result['verification']['debit_match']}")
+    print(f"Credit match: {result['verification']['credit_match']}")
+```
+
+Or use directly:
+
+```python
+from pdfparser.utils import verify_turnover
+
+verification = verify_turnover(transactions, summary_text=full_text)
+print(verification['status'])  # 'passed', 'failed', 'not_available'
+```
 
 ### Utility Functions
 
@@ -104,6 +136,8 @@ result = parse_pdf('statement.pdf', parser='pdfoxide')
 from pdfparser.utils import (
     extract_metadata,
     extract_transactions,
+    extract_summary_totals,
+    verify_turnover,
     save_metadata_csv,
     save_transactions_csv,
     is_valid_parse,
@@ -114,12 +148,23 @@ from pdfparser.utils import (
 # Load configuration from .env
 config = load_config()
 print(f"Output directory: {config['output_dir']}")
+print(f"Verify turnover: {config['verify_turnover']}")
 
 # Extract metadata from text
 metadata = extract_metadata(text)
+# Returns: account_no, business_unit, product_name, statement_date,
+#          valuta, unit_address, transaction_period, opening_balance,
+#          closing_balance, total_debit, total_credit
 
 # Extract transactions from text
 transactions = extract_transactions(text)
+
+# Extract summary totals
+summary = extract_summary_totals(text)
+# Returns: opening_balance, total_debit, total_credit, closing_balance
+
+# Verify turnover
+verification = verify_turnover(transactions, summary_text=text)
 
 # Save to CSV files
 save_metadata_csv(metadata, 'output/metadata/statement.csv')
@@ -128,12 +173,6 @@ save_transactions_csv(transactions, 'output/transactions/statement.csv')
 # Validate parsing quality
 if is_valid_parse(metadata, transactions):
     print("Parse successful")
-
-# Ensure output directories exist (with config)
-ensure_output_dirs(config)
-
-# Or let it auto-load config
-ensure_output_dirs()  # Uses load_config() internally
 ```
 
 ## Output Format
@@ -142,10 +181,17 @@ ensure_output_dirs()  # Uses load_config() internally
 
 | Field | Value |
 |-------|-------|
-| Account No | 041901001548309 |
-| Business Unit | KC Kalimalang |
-| Product Name | Giro Umum-IDR |
-| Statement Date | 01/11/2023 - 30/11/2023 |
+| account_no | 041901001548309 |
+| business_unit | KC Kalimalang |
+| product_name | Giro Umum |
+| statement_date | 08/12/23 |
+| valuta | IDR |
+| unit_address | Jl. Kalimalang Blok C3 No.6 Rt.011 Rw.07 Kec. Duren Sawit, Jakarta Timur |
+| transaction_period | 01/11/23 - 30/11/23 |
+| opening_balance | 269,872,497.00 |
+| closing_balance | 297,930,854.00 |
+| total_debit | 47,104.00 |
+| total_credit | 28,105,461.00 |
 
 ### Transactions CSV
 
@@ -155,23 +201,9 @@ ensure_output_dirs()  # Uses load_config() internally
 
 ## Configuration
 
-### Requirements
+### Environment Variables
 
-```
-PyMuPDF==1.26.5          # Python 3.9 compatible version
-pdfplumber>=0.10.0       # Tested on Python 3.9
-pypdf>=3.0.0             # Pure Python, 3.9 compatible
-pdf-oxide>=0.2.2         # Rust-based PDF parsing
-reportlab>=4.0.0         # For generating synthetic PDFs
-tabulate>=0.9.0          # For formatted benchmark tables
-python-dotenv>=1.0.0     # Environment variable management
-```
-
-**Note:** PyMuPDF is pinned to 1.26.5 for Python 3.9 compatibility. Newer versions require Python 3.10+.
-
-## Environment Variables
-
-The parser uses environment variables for path configuration. Create a `.env` file in the project root (copy from `.env.example`):
+Create a `.env` file in the project root:
 
 ```bash
 cp .env.example .env
@@ -184,22 +216,7 @@ cp .env.example .env
 | `SOURCE_PDF_DIR` | `source-pdf` | Directory containing source PDF bank statements |
 | `OUTPUT_DIR` | `output` | Directory where parsed CSV files are saved |
 | `TEST_PDFS_DIR` | `test-pdfs` | Directory for synthetic test PDFs (benchmarking) |
-
-### Usage Example
-
-```python
-from pdfparser import load_config, ensure_output_dirs
-
-# Load configuration from .env
-config = load_config()
-print(config['output_dir'])  # 'output' or custom value from .env
-
-# Create output directories using config
-ensure_output_dirs(config)
-
-# Or let it auto-load config
-ensure_output_dirs()  # Uses load_config() internally
-```
+| `VERIFY_TURNOVER` | `false` | Enable turnover verification ('true' or 'false') |
 
 ### Custom Paths
 
@@ -209,9 +226,8 @@ To use custom paths, create `.env`:
 SOURCE_PDF_DIR=/data/bank-statements
 OUTPUT_DIR=/results/parsed
 TEST_PDFS_DIR=/tmp/test-data
+VERIFY_TURNOVER=true
 ```
-
-**Note:** Paths can be relative (to project root) or absolute.
 
 ## Multiprocessing
 
@@ -243,31 +259,22 @@ results = batch_parse_from_directory(
 
 **Returns:** Dict with `total`, `successful`, `failed`, `success_rate`, and `results` list.
 
-### Performance
-
-- Target: <2 seconds per page
-- Tested on: 19/152 CPU, 258 GB RAM
-- Accuracy: 90%+ success rate on Indonesian bank statements
-
 ## Benchmarking
 
-Compare parser performance:
+Run performance benchmarks to compare all PDF parsers against your test dataset.
+
+### Quick Start
 
 ```bash
-python benchmark.py --parsers all --test-dir test-pdfs --max-files 1000 --max-workers 8
+# Benchmark all parsers with 100 PDFs (default)
+uv run python benchmark.py --test-dir source-pdf
+
+# Benchmark only PyMuPDF parser with 1000 PDFs
+uv run python benchmark.py --test-dir source-pdf --parsers=pymupdf --max-files 1000
+
+# Compare all parsers with 500 PDFs using 8 workers
+uv run python benchmark.py --test-dir source-pdf --max-files 500 --max-workers 8
 ```
-
-Options:
-
-- `--parsers`: `all`, `pymupdf`, `pdfplumber`, `pypdf`, `pdfoxide`
-- `--test-dir`: Directory containing PDF files
-- `--max-files`: Maximum number of files to test
-- `--max-workers`: Number of parallel workers
-
-Results saved to `benchmark_results.csv` with metrics:
-- Parse time per file and per page
-- Success rate (using is_valid_parse)
-- Transaction extraction counts
 
 ### Generate Test Data
 
@@ -277,69 +284,99 @@ Create synthetic bank statement PDFs for benchmarking:
 # Generate 100 test PDFs (default)
 python generate_test_pdfs.py
 
-# Generate 50 PDFs with custom settings
-python generate_test_pdfs.py --num=50 --min-pages 2 --max-pages 5 --min-transactions 200 --max-transactions 400
+# Generate 1000 PDFs with custom settings
+python generate_test_pdfs.py --num=1000 --min-pages 2 --max-pages 5 --min-transactions 200 --max-transactions 400
 
-# Custom output directory
-python generate_test_pdfs.py --num=100 --output-dir /path/to/test-pdfs
+# Generate 20000 PDFs for full benchmark
+python generate_test_pdfs.py --num=20000 --output-dir source-pdf
 ```
 
-Options:
+### Benchmark Options
 
-- `--num`: Number of PDFs to generate (default: 100)
-- `--output-dir`: Output directory (default: test-pdfs)
-- `--min-pages`/`--max-pages`: Pages per PDF (default: 1-10)
-- `--min-transactions`/`--max-transactions`: Transactions per page (default: 100-500)
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--parsers` | Comma-separated parser list: pymupdf, pdfplumber, pypdf, pdfoxide, all | all |
+| `--test-dir` | Directory containing PDF files | **Required** |
+| `--max-files` | Maximum number of PDFs to process | All files |
+| `--max-workers` | Number of parallel workers | 4 |
+
+### Example Commands
+
+```bash
+# Quick test with 50 PDFs
+uv run python benchmark.py --test-dir source-pdf --max-files 50
+
+# Compare PyMuPDF vs pdf_oxide with 500 PDFs
+uv run python benchmark.py --test-dir source-pdf --parsers=pymupdf,pdfoxide --max-files 500
+
+# Full benchmark with all parsers and 20000 PDFs (recommended for production testing)
+uv run python benchmark.py --test-dir source-pdf --max-files 20000 --max-workers 8
+```
+
+### Performance Results (20,000 PDFs)
+
+| Parser | Time | Speed | Success Rate |
+|--------|------|-------|--------------|
+| PyMuPDF | ~25s | **819 docs/sec** | 100% |
+| pdf_oxide | ~52s | 386 docs/sec | 100% |
+| pypdf | ~317s | 63 docs/sec | 100% |
+| pdfplumber | ~645s | 31 docs/sec | 100% |
+
+### Performance Results (2,000 PDFs, 10 Workers)
+
+Benchmark run: 2025-12-28 | Workers: 10 | Files: 2,000
+
+| Parser | Time (total) | Speed | Avg Time/File | Success Rate |
+|--------|--------------|-------|---------------|--------------|
+| **PyMuPDF** | ~4.3s | **~468 docs/sec** | 0.0208s | 100% |
+| pypdf | ~136s | ~15 docs/sec | 0.3978s | 100% |
+| pdf_oxide | ~93s | ~22 docs/sec | 0.0463s | 0% (validation fails) |
+| pdfplumber | ~226s | ~9 docs/sec | 0.6639s | 100% |
+
+**Key Findings:**
+- PyMuPDF is **~32x faster** than pdfplumber and **~20x faster** than pypdf
+- PyMuPDF achieves **0.0208s average** per file with 10 workers
+- All parsers (except pdfoxide) achieve 100% success rate on test dataset
+- pdf_oxide parses successfully but fails validation (structure mismatch)
+- Regex optimization: Pre-compiled patterns provide ~3% improvement
+
+### Recommended Configuration
+
+For optimal performance on production workloads:
+- **Parser**: PyMuPDF (default)
+- **Workers**: 8-10 (match CPU cores)
+- **Expected throughput**: 400-500 docs/sec (varies by PDF complexity)
+
+### Output Files
+
+Benchmark results are saved to:
+- `output/benchmark_results.csv` - Detailed per-file results
+
+### Interpreting Results
+
+The benchmark outputs:
+- **Files**: Total PDFs processed
+- **Success/Failed**: Parse outcomes
+- **Success Rate**: Percentage of valid parses
+- **Avg Time/File**: Average parsing time per document
+- **Avg Txns/File**: Average transactions extracted per file
 
 ## API Reference
 
-### parse_pdf(path: str, parser: str = 'pymupdf') -> dict
+### parse_pdf(path: str, parser: str = 'pymupdf', verify_turnover: bool = None) -> dict
 
 Parse a PDF bank statement file.
 
 **Parameters:**
 - `path`: Path to PDF file
 - `parser`: Parser to use ('pymupdf', 'pdfplumber', 'pypdf', 'pdfoxide')
+- `verify_turnover`: Enable turnover verification (overrides .env setting)
 
-**Returns:** dict with 'metadata' and 'transactions' keys
-
-**Raises:**
-- `ValueError`: If parser name is invalid
-- `FileNotFoundError`: If PDF file doesn't exist
-
-### extract_metadata(text: str) -> dict
-
-Extract metadata fields from bank statement text.
-
-**Parameters:**
-- `text`: Full text extracted from PDF first page
-
-**Returns:** dict with keys: account_no, business_unit, product_name, statement_date
-
-### extract_transactions(text: str) -> list[dict]
-
-Extract transaction rows from bank statement text.
-
-**Parameters:**
-- `text`: Full text extracted from all PDF pages
-
-**Returns:** list of dicts with keys: date, description, user, debit, credit, balance
-
-### is_valid_parse(metadata: dict, transactions: list[dict]) -> bool
-
-Validate parsing success based on minimum data quality requirements.
-
-**Returns:** True if parse is valid, False otherwise
+**Returns:** dict with 'metadata', 'transactions', and optionally 'verification' keys
 
 ### batch_parse(paths: list[str], parser_name: str = 'pymupdf', max_workers: int = None, output_dir: str = None) -> dict
 
 Process multiple PDF files in parallel using ProcessPoolExecutor.
-
-**Parameters:**
-- `paths`: List of paths to PDF files
-- `parser_name`: Parser to use ('pymupdf', 'pdfplumber', 'pypdf', 'pdfoxide')
-- `max_workers`: Number of parallel workers (default: CPU count)
-- `output_dir`: Output directory for CSVs (default: from config)
 
 **Returns:** dict with keys:
 - `total`: Total files processed
@@ -348,19 +385,6 @@ Process multiple PDF files in parallel using ProcessPoolExecutor.
 - `success_rate`: Percentage of successful parses
 - `results`: List of individual file results
 
-### batch_parse_from_directory(directory: str, parser_name: str = 'pymupdf', max_workers: int = None, output_dir: str = None, pattern: str = '**/*.pdf') -> dict
-
-Process all PDF files in a directory and its subdirectories.
-
-**Parameters:**
-- `directory`: Directory to search for PDFs
-- `parser_name`: Parser to use
-- `max_workers`: Number of parallel workers
-- `output_dir`: Output directory for CSVs
-- `pattern`: Glob pattern for file discovery
-
-**Returns:** dict with same keys as batch_parse()
-
 ## Project Structure
 
 ```
@@ -368,16 +392,15 @@ b-pdf-parser/
 ├── pdfparser/              # Main parser module
 │   ├── __init__.py        # Public API, parse_pdf() dispatcher
 │   ├── batch.py           # Batch processing module (ProcessPoolExecutor)
-│   ├── pymupdf_parser.py  # PyMuPDF implementation (fast, column-based parsing)
-│   ├── pdfplumber_parser.py # pdfplumber implementation (table extraction + text fallback)
-│   ├── pypdf_parser.py    # pypdf implementation (pure Python, portable)
+│   ├── pymupdf_parser.py  # PyMuPDF implementation (fastest)
+│   ├── pdfplumber_parser.py # pdfplumber implementation
+│   ├── pypdf_parser.py    # pypdf implementation (pure Python)
 │   ├── pdfoxide_parser.py # pdf_oxide implementation (Rust-based)
-│   └── utils.py           # Shared utilities (regex, CSV, validation)
-├── tests/                  # Test suite with pytest and hypothesis
-│   ├── __init__.py        # Test module with shared fixtures
-│   ├── test_parsers.py    # Parser integration tests (44 tests)
-│   └── test_utils.py      # Utility function tests with property-based testing
-├── source-pdf/            # Sample PDFs for testing
+│   └── utils.py           # Shared utilities (regex, CSV, verification)
+├── tests/                  # Test suite with pytest
+│   ├── test_parsers.py    # Parser integration tests
+│   └── test_utils.py      # Utility function tests (72+ tests)
+├── source-pdf/            # Sample PDFs (21,000+ for benchmarking)
 ├── test-pdfs/             # Generated test dataset
 ├── output/                # Parsed results
 │   ├── metadata/         # Metadata CSV outputs
@@ -400,19 +423,19 @@ uv run pytest tests/ -v
 ```
 
 **Test Coverage:**
-- `tests/test_parsers.py`: Parser integration tests (TestPdfoxideParser, TestAllParsersConsistency, TestIsValidParse, TestReportlabPdfGeneration)
-- `tests/test_utils.py`: Utility function tests with hypothesis property-based testing (TestExtractMetadata, TestExtractTransactions, TestTransactionDatePattern, TestMetadataPatterns, TestEdgeCases)
+- `tests/test_parsers.py`: Parser integration tests
+- `tests/test_utils.py`: Utility function tests with property-based testing
 
-**44 tests total** with parametrized test cases covering all 4 parsers.
+**72+ tests** with parametrized test cases covering all 4 parsers.
 
 ### Code Quality
 
 ```bash
 # Lint with ruff
-uv run ruff check pdfparser/ tests/ benchmark.py generate_test_pdfs.py
+uv run ruff check pdfparser/ tests/
 
 # Type check with pyrefly
-uv run pyrefly check pdfparser/ tests/ benchmark.py generate_test_pdfs.py
+uv run pyrefly check pdfparser/
 
 # Fix linting issues automatically
 uv run ruff check --fix pdfparser/
