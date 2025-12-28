@@ -6,18 +6,19 @@ This module provides functions to parse PDF bank statements and extract:
 - Transactions (Date, Description, User, Debit, Credit, Balance)
 """
 
-from pdfparser.pymupdf_parser import parse_pdf_pymupdf
+from pdfparser.batch import batch_parse, batch_parse_from_directory
+from pdfparser.pdfoxide_parser import parse_pdf_pdfoxide
 from pdfparser.pdfplumber_parser import parse_pdf_pdfplumber
+from pdfparser.pymupdf_parser import parse_pdf_pymupdf
 from pdfparser.pypdf_parser import parse_pdf_pypdf
-
 from pdfparser.utils import (
+    ensure_output_dirs,
     extract_metadata,
     extract_transactions,
+    is_valid_parse,
+    load_config,
     save_metadata_csv,
     save_transactions_csv,
-    is_valid_parse,
-    ensure_output_dirs,
-    load_config
 )
 
 
@@ -44,8 +45,10 @@ def parse_pdf(path: str, parser: str = 'pymupdf') -> dict:
         return parse_pdf_pdfplumber(path)
     elif parser == 'pypdf':
         return parse_pdf_pypdf(path)
+    elif parser == 'pdfoxide':
+        return parse_pdf_pdfoxide(path)
     else:
-        raise ValueError(f"Invalid parser: {parser}. Choose 'pymupdf', 'pdfplumber', or 'pypdf'")
+        raise ValueError(f"Invalid parser: {parser}. Choose 'pymupdf', 'pdfplumber', 'pypdf', or 'pdfoxide'")
 
 
 __all__ = [
@@ -53,6 +56,9 @@ __all__ = [
     'parse_pdf_pymupdf',
     'parse_pdf_pdfplumber',
     'parse_pdf_pypdf',
+    'parse_pdf_pdfoxide',
+    'batch_parse',
+    'batch_parse_from_directory',
     'extract_metadata',
     'extract_transactions',
     'save_metadata_csv',

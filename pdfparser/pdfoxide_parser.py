@@ -1,21 +1,21 @@
 """
-PyMuPDF-based parser for Indonesian bank statement PDFs.
+pdf_oxide-based parser for Indonesian bank statement PDFs.
 
-This implementation uses the PyMuPDF (fitz) library for fast text extraction.
+This implementation uses the pdf_oxide library for text extraction.
 It is optimized for performance and multiprocessing safety.
 """
 
 from pathlib import Path
 from typing import Any, Dict
 
-import fitz  # PyMuPDF
+from pdf_oxide import PdfDocument
 
 from pdfparser.utils import extract_metadata, extract_transactions
 
 
-def parse_pdf_pymupdf(path: str) -> Dict[str, Any]:
+def parse_pdf_pdfoxide(path: str) -> Dict[str, Any]:
     """
-    Parse Indonesian bank statement PDF using PyMuPDF.
+    Parse Indonesian bank statement PDF using pdf_oxide.
 
     Extracts metadata from first page header and transactions from all pages.
     Uses regex patterns from utils module for parsing.
@@ -32,8 +32,8 @@ def parse_pdf_pymupdf(path: str) -> Dict[str, Any]:
 
     Raises:
         FileNotFoundError: If PDF file doesn't exist
-        fitz.FileDataError: If PDF is corrupted or invalid
-        Exception: For other PDF processing errors
+        ValueError: If PDF is corrupted, invalid, or has no pages
+        RuntimeError: For other PDF processing errors
     """
     # Convert to Path for validation
     path_obj = Path(path)
@@ -44,23 +44,24 @@ def parse_pdf_pymupdf(path: str) -> Dict[str, Any]:
     if not path_obj.is_file():
         raise FileNotFoundError(f"Path is not a file: {path}")
 
-    doc = None
     try:
         # Open PDF document
-        doc = fitz.open(str(path))
+        doc = PdfDocument(str(path))
 
         # Handle empty document
-        if len(doc) == 0:
+        page_count = doc.page_count()
+        if page_count == 0:
             raise ValueError(f"PDF has no pages: {path}")
 
         # Extract metadata from first page
-        first_page_text = doc[0].get_text()
-        metadata = extract_metadata(first_page_text)
+        header_text = doc.extract_text(0)  # type: ignore[attr-defined]
+        header_text = header_text or ""
+        metadata = extract_metadata(header_text)
 
         # Extract transactions from all pages
         all_text = ""
-        for page_num in range(len(doc)):
-            page_text = doc[page_num].get_text()
+        for page_num in range(page_count):
+            page_text = doc.extract_text(page_num)  # type: ignore[attr-defined] or ""
             all_text += page_text + "\n"
         transactions = extract_transactions(all_text)
 
@@ -71,10 +72,7 @@ def parse_pdf_pymupdf(path: str) -> Dict[str, Any]:
 
     except FileNotFoundError:
         raise
-    except fitz.FileDataError as e:
-        raise ValueError(f"Corrupted PDF: {path}") from e
+    except ValueError:
+        raise
     except Exception as e:
-        raise RuntimeError(f"Failed to parse PDF: {path}") from e
-    finally:
-        if doc is not None:
-            doc.close()
+        raise RuntimeError(f"Failed to parse PDF with pdf_oxide: {path}") from e

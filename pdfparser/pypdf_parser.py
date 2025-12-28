@@ -5,10 +5,11 @@ This implementation uses the pure Python pypdf library for text extraction.
 It is optimized for portability and multiprocessing safety.
 """
 
+from pathlib import Path
+from typing import Any, Dict
+
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
-from typing import Dict, Any
-from pathlib import Path
 
 from pdfparser.utils import extract_metadata, extract_transactions
 

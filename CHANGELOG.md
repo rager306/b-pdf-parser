@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2024-12-28
+
+### Added
+
+- **pdf_oxide parser implementation** (`pdfparser/pdfoxide_parser.py`)
+  - `parse_pdf_pdfoxide()` - Main parser using Rust-based pdf_oxide library
+  - Fourth parser option for users to choose from
+  - Rust-based PDF parsing for modern PDF handling
+  - Multiprocessing safe with no global state
+  - Compatible with Python 3.9
+- **UV package management support**
+  - `pyproject.toml` - Project configuration for UV
+  - `uv sync --python python3.9` - Fast dependency installation
+  - Dev dependencies: pytest, hypothesis, ruff, pyrefly
+  - Reproducible environments with lock file support
+- **Test suite framework** (`tests/`)
+  - pytest and hypothesis for property-based testing
+  - `tests/__init__.py` - Test module with shared fixtures
+  - `tests/test_parsers.py` - Parser integration tests (44 tests)
+  - `tests/test_utils.py` - Utility function tests with hypothesis
+  - Tests cover all 4 parsers with parametrized test cases
+- **Benchmark tool** (`benchmark.py`)
+  - CLI interface with argparse for --parsers, --test-dir, --max-files, --max-workers
+  - ProcessPoolExecutor for parallel parsing
+  - Metrics collection: time per file, time per page, throughput
+  - Success rate calculation using is_valid_parse()
+  - Output to benchmark_results.csv
+  - Tabulate table display for results
+- **Batch processing module** (`pdfparser/batch.py`)
+  - `batch_parse()` - Parallel processing of multiple PDF files
+  - `batch_parse_from_directory()` - Process all PDFs in a directory
+  - ProcessPoolExecutor for parallel file processing
+  - Per-file CSV saving to metadata/ and transactions/ directories
+  - Error handling with failure information in results
+  - `batch_parse` and `batch_parse_from_directory` exported in __init__.py
+- **Test data generator** (`generate_test_pdfs.py`)
+  - CLI interface with argparse for --num, --output-dir, --min-pages, --max-pages, --min-transactions, --max-transactions
+  - Random realistic data (account numbers, names, amounts)
+  - reportlab-based PDF generation with bank statement format
+  - Configurable page count (1-10) and transactions per page (100-500)
+
+### Changed
+
+- Updated `pdfparser/__init__.py` to support pdfoxide parser
+- Updated parser selection to include 'pdfoxide' option
+- Added `parse_pdf_pdfoxide`, `batch_parse`, `batch_parse_from_directory` to public API exports
+- Import sorting automatically organized by ruff
+- Fixed circular import issue in batch.py by using direct parser imports
+
+### Test Results
+
+| Parser | Example_statement.pdf | REKENING_KORAN...pdf | JAN-2024.pdf |
+|--------|----------------------|---------------------|--------------|
+| PyMuPDF | 47 txns, valid=True | 14 txns, valid=True | 15 txns, valid=True |
+| pdfplumber | 47 txns, valid=True | 14 txns, valid=True | 15 txns, valid=True |
+| pypdf | 47 txns, valid=True | 14 txns, valid=True | 15 txns, valid=True |
+| pdf_oxide | 47 txns, valid=True | 14 txns, valid=True | 15 txns, valid=True |
+
+All 44 tests pass with pytest and hypothesis property-based testing.
+
+### Known Limitations
+
+- None - all planned features for v1.3.0 are implemented
+
 ## [1.2.0] - 2024-12-28
 
 ### Added

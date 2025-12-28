@@ -9,7 +9,7 @@ import csv
 import os
 import re
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 

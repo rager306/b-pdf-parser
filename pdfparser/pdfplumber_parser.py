@@ -6,18 +6,18 @@ It attempts table extraction first, falls back to text-based parsing.
 Optimized for accuracy on tabular data and multiprocessing safety.
 """
 
-import pdfplumber
 import re
-from typing import Dict, List, Any
 from pathlib import Path
+from typing import Any, Dict, List
+
+import pdfplumber
 
 from pdfparser.utils import (
+    TRANSACTION_DATE_PATTERN,
+    TRANSACTION_LINE_PATTERN,
     extract_metadata,
     extract_transactions,
-    TRANSACTION_DATE_PATTERN,
-    TRANSACTION_LINE_PATTERN
 )
-
 
 # Alternative metadata patterns for Indonesian bank statement labels
 ACCOUNT_NO_PATTERN_ID = r'No\.\s*Rekening\s*:\s*([^\n]+)'
