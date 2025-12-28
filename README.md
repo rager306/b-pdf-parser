@@ -73,6 +73,8 @@ result = parse_pdf('statement.pdf', parser='pdfplumber')
 | PyMuPDF | Fastest | Column-based transaction format |
 | pdfplumber | Fast | Table extraction + inline text format |
 
+**Note:** Both parsers handle both Indonesian and English bank statement labels automatically.
+
 ### Utility Functions
 
 ```python
