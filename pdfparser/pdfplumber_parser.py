@@ -12,6 +12,7 @@ from typing import Dict, List, Any
 from pathlib import Path
 
 from pdfparser.utils import (
+    extract_metadata,
     extract_transactions,
     TRANSACTION_DATE_PATTERN,
     TRANSACTION_LINE_PATTERN
@@ -27,7 +28,10 @@ STATEMENT_DATE_PATTERN_ID = r'Tanggal\s*Laporan\s*:\s*([^\n]+)'
 
 def extract_metadata_pdfplumber(text: str) -> Dict[str, str]:
     """
-    Extract metadata from pdfplumber text output (handles Indonesian labels).
+    Extract metadata from pdfplumber text output (handles Indonesian and English labels).
+
+    First tries Indonesian patterns. If fewer than 2 fields are found,
+    falls back to English patterns and merges non-empty values.
 
     Args:
         text: Full text extracted from PDF first page
@@ -61,6 +65,15 @@ def extract_metadata_pdfplumber(text: str) -> Dict[str, str]:
         metadata['statement_date'] = date_match.group(1).strip()
     else:
         metadata['statement_date'] = ''
+
+    # If fewer than 2 fields found, try English patterns and merge
+    non_empty_count = sum(1 for v in metadata.values() if v)
+    if non_empty_count < 2:
+        english_metadata = extract_metadata(text)
+        # Merge non-empty English values into metadata
+        for key in ['account_no', 'business_unit', 'product_name', 'statement_date']:
+            if not metadata.get(key) and english_metadata.get(key):
+                metadata[key] = english_metadata[key]
 
     return metadata
 
