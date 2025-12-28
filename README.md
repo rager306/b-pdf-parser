@@ -208,21 +208,21 @@ statement_date;08/12/23
 valuta;IDR
 unit_address;Jl. Kalimalang Blok C3 No.6 Rt.011 Rw.07 Kec. Duren Sawit, Jakarta Timur
 transaction_period;01/11/23 - 30/11/23
-opening_balance;269872497.00
-closing_balance;297930854.00
-total_debit;47104.00
-total_credit;28105461.00
+opening_balance;269872497
+closing_balance;297930854
+total_debit;47104
+total_credit;28105461
 ```
 
 ### Transactions CSV (transactions.csv)
 
 ```csv
 Date;Description;User;Debit;Credit;Balance
-03/11/23 04:14:59;NBMB UJANG SUMARWAN TO...;8888083;0.00;25000.00;269897497.00
-03/11/23 04:15:30;Transfer Via BRImo;8888123;150000.00;0.00;269747497.00
+03/11/23 04:14:59;NBMB UJANG SUMARWAN TO...;8888083;0;25000;269897497
+03/11/23 04:15:30;Transfer Via BRImo;8888123;150000;0;269747497
 ```
 
-**Number Format:** Indonesian format (1.000.000,00) is converted to standard format (1000000.00) without thousand separators.
+**Number Format:** Indonesian format (1.000.000,00) and US format (1,000,000.00) are converted to standard format (1000000) without thousand separators. Decimals are preserved (e.g., 1234.56 stays as 1234.56).
 
 ## Configuration
 
@@ -307,13 +307,13 @@ Create synthetic bank statement PDFs for benchmarking:
 
 ```bash
 # Generate 100 test PDFs (default)
-python generate_test_pdfs.py
+uv run python generate_test_pdfs.py
 
 # Generate 1000 PDFs with custom settings
-python generate_test_pdfs.py --num=1000 --min-pages 2 --max-pages 5 --min-transactions 200 --max-transactions 400
+uv run python generate_test_pdfs.py --num=1000 --min-pages 2 --max-pages 5 --min-transactions 200 --max-transactions 400
 
 # Generate 20000 PDFs for full benchmark
-python generate_test_pdfs.py --num=20000 --output-dir source-pdf
+uv run python generate_test_pdfs.py --num=20000 --output-dir source-pdf
 ```
 
 ### Benchmark Options

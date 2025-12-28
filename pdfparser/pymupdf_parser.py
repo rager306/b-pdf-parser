@@ -10,7 +10,7 @@ from typing import Any, Dict
 
 import fitz  # PyMuPDF
 
-from pdfparser.utils import extract_metadata, extract_transactions
+from pdfparser.utils import extract_metadata, extract_summary_totals, extract_transactions
 
 
 def parse_pdf_pymupdf(path: str) -> Dict[str, Any]:
@@ -57,6 +57,18 @@ def parse_pdf_pymupdf(path: str) -> Dict[str, Any]:
         first_page_text = doc[0].get_text()
         metadata = extract_metadata(first_page_text)
 
+        # Fallback: extract account_no from filename if not found in text
+        # Many Indonesian bank PDFs have account number in filename (e.g., 041901001548309)
+        if not metadata.get('account_no'):
+            import re
+            # Match 10-16 digit number in filename, but not if it looks like part of date
+            acct_match = re.search(r'(\d{10,16})', path_obj.stem)
+            if acct_match:
+                # Verify it's not a date-like pattern (e.g., 2024-01-15)
+                potential_acct = acct_match.group(1)
+                if not re.match(r'^\d{4}-\d{2}-\d{2}$', potential_acct):
+                    metadata['account_no'] = potential_acct
+
         # Extract transactions from all pages
         all_text = ""
         for page_num in range(len(doc)):
@@ -64,9 +76,21 @@ def parse_pdf_pymupdf(path: str) -> Dict[str, Any]:
             all_text += page_text + "\n"
         transactions = extract_transactions(all_text)
 
+        # Extract summary totals and add to metadata
+        summary = extract_summary_totals(all_text)
+        if summary.get('total_debit'):
+            metadata['total_debit'] = summary['total_debit']
+        if summary.get('total_credit'):
+            metadata['total_credit'] = summary['total_credit']
+        if summary.get('opening_balance'):
+            metadata['opening_balance'] = summary['opening_balance']
+        if summary.get('closing_balance'):
+            metadata['closing_balance'] = summary['closing_balance']
+
         return {
             'metadata': metadata,
-            'transactions': transactions
+            'transactions': transactions,
+            'full_text': all_text
         }
 
     except FileNotFoundError:

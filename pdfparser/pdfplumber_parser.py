@@ -16,8 +16,12 @@ from pdfparser.utils import (
     TRANSACTION_DATE_PATTERN,
     TRANSACTION_LINE_PATTERN,
     extract_metadata,
+    extract_summary_totals,
     extract_transactions,
 )
+
+# Pattern to extract account number from filename
+ACCOUNT_NO_FROM_FILENAME_PATTERN = r'(\d{10,16})'
 
 # Alternative metadata patterns for Indonesian bank statement labels
 ACCOUNT_NO_PATTERN_ID = r'No\.\s*Rekening\s*:\s*([^\n]+)'
@@ -212,32 +216,51 @@ def parse_pdf_pdfplumber(path: str) -> Dict[str, Any]:
             first_page_text = pdf.pages[0].extract_text() or ""
             metadata = extract_metadata_pdfplumber(first_page_text)
 
+            # Fallback: extract account_no from filename if not found in text
+            if not metadata.get('account_no'):
+                import re
+                acct_match = re.search(ACCOUNT_NO_FROM_FILENAME_PATTERN, path_obj.stem)
+                if acct_match:
+                    metadata['account_no'] = acct_match.group(1)
+
             # Try table extraction first
             transactions = []
             all_tables = []
+            all_text = ""
             for page in pdf.pages:
                 tables = page.extract_tables()
                 if tables:
                     all_tables.extend(tables)
+                # Also collect text for summary extraction
+                page_text = page.extract_text() or ""
+                all_text += page_text + "\n"
 
             if all_tables:
                 transactions = _parse_table_to_transactions(all_tables)
 
             # Fallback to text extraction if no tables found
             if not transactions:
-                all_text = ""
-                for page in pdf.pages:
-                    page_text = page.extract_text() or ""
-                    all_text += page_text + "\n"
                 # Try inline text parsing first (pdfplumber format)
                 transactions = extract_transactions_inline(all_text)
                 # Fall back to column-based parsing if inline fails
                 if not transactions:
                     transactions = extract_transactions(all_text)
 
+            # Extract summary totals and add to metadata
+            summary = extract_summary_totals(all_text)
+            if summary.get('total_debit'):
+                metadata['total_debit'] = summary['total_debit']
+            if summary.get('total_credit'):
+                metadata['total_credit'] = summary['total_credit']
+            if summary.get('opening_balance'):
+                metadata['opening_balance'] = summary['opening_balance']
+            if summary.get('closing_balance'):
+                metadata['closing_balance'] = summary['closing_balance']
+
             return {
                 'metadata': metadata,
-                'transactions': transactions
+                'transactions': transactions,
+                'full_text': all_text
             }
 
     except FileNotFoundError:

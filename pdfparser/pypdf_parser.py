@@ -11,7 +11,7 @@ from typing import Any, Dict
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
-from pdfparser.utils import extract_metadata, extract_transactions
+from pdfparser.utils import extract_metadata, extract_summary_totals, extract_transactions
 
 
 def parse_pdf_pypdf(path: str) -> Dict[str, Any]:
@@ -58,6 +58,13 @@ def parse_pdf_pypdf(path: str) -> Dict[str, Any]:
         header_text = header_text or ""
         metadata = extract_metadata(header_text)
 
+        # Fallback: extract account_no from filename if not found in text
+        if not metadata.get('account_no'):
+            import re
+            acct_match = re.search(r'(\d{10,16})', path_obj.stem)
+            if acct_match:
+                metadata['account_no'] = acct_match.group(1)
+
         # Extract transactions from all pages
         all_text = ""
         for page in reader.pages:
@@ -65,9 +72,21 @@ def parse_pdf_pypdf(path: str) -> Dict[str, Any]:
             all_text += page_text + "\n"
         transactions = extract_transactions(all_text)
 
+        # Extract summary totals and add to metadata
+        summary = extract_summary_totals(all_text)
+        if summary.get('total_debit'):
+            metadata['total_debit'] = summary['total_debit']
+        if summary.get('total_credit'):
+            metadata['total_credit'] = summary['total_credit']
+        if summary.get('opening_balance'):
+            metadata['opening_balance'] = summary['opening_balance']
+        if summary.get('closing_balance'):
+            metadata['closing_balance'] = summary['closing_balance']
+
         return {
             'metadata': metadata,
-            'transactions': transactions
+            'transactions': transactions,
+            'full_text': all_text
         }
 
     except FileNotFoundError:

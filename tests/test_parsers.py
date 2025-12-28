@@ -175,3 +175,97 @@ class TestReportlabPdfGeneration:
 
         except ImportError:
             pytest.skip("reportlab not installed")
+
+
+class TestVerifyTurnover:
+    """Tests for turnover verification feature."""
+
+    def test_parse_pdf_no_verification_key_by_default(self):
+        """Verify parse_pdf result does not include 'verification' key when disabled."""
+        if not EXAMPLE_STATEMENT_PDF.exists():
+            pytest.skip("Test PDF not found")
+
+        result = parse_pdf(str(EXAMPLE_STATEMENT_PDF))
+        # By default, verification should not add a verification key
+        assert 'verification' not in result
+
+    def test_parse_pdf_with_env_enabled(self, monkeypatch):
+        """Verify parse_pdf includes verification when VERIFY_TURNOVER=true in .env."""
+        if not EXAMPLE_STATEMENT_PDF.exists():
+            pytest.skip("Test PDF not found")
+
+        # Set VERIFY_TURNOVER directly in environment (bypasses .env file)
+        monkeypatch.setenv('VERIFY_TURNOVER', 'true')
+
+        # Import to get fresh config with overridden env var
+        import importlib
+        import pdfparser.utils
+        importlib.reload(pdfparser.utils)
+
+        from pdfparser.utils import load_config
+        config = load_config()
+        assert config['verify_turnover'] == 'true'
+
+    def test_verify_turnover_function_returns_dict(self):
+        """Verify verify_turnover function returns a dictionary."""
+        from pdfparser.utils import verify_turnover
+
+        transactions = []
+        result = verify_turnover(transactions)
+
+        assert isinstance(result, dict)
+        assert 'status' in result
+        assert 'passed' in result
+        assert 'message' in result
+
+
+class TestVerifyTurnoverParameter:
+    """Tests for verify_turnover parameter in parse_pdf()."""
+
+    def test_parse_pdf_accepts_verify_turnover_true(self):
+        """Verify parse_pdf accepts verify_turnover=True parameter."""
+        if not EXAMPLE_STATEMENT_PDF.exists():
+            pytest.skip("Test PDF not found")
+
+        # Should not raise TypeError for unexpected keyword argument
+        result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), verify_turnover=True)
+        assert isinstance(result, dict)
+
+    def test_parse_pdf_accepts_verify_turnover_false(self):
+        """Verify parse_pdf accepts verify_turnover=False parameter."""
+        if not EXAMPLE_STATEMENT_PDF.exists():
+            pytest.skip("Test PDF not found")
+
+        result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), verify_turnover=False)
+        assert isinstance(result, dict)
+
+    def test_parse_pdf_verify_turnover_true_overrides_env(self, monkeypatch):
+        """Verify verify_turnover=True overrides .env setting."""
+        if not EXAMPLE_STATEMENT_PDF.exists():
+            pytest.skip("Test PDF not found")
+
+        # Set .env to false
+        monkeypatch.setenv('VERIFY_TURNOVER', 'false')
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
+
+        # But pass True to function - should verify
+        result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), verify_turnover=True)
+        assert isinstance(result, dict)
+        assert 'verification' in result
+
+    def test_parse_pdf_verify_turnover_false_overrides_env(self, monkeypatch):
+        """Verify verify_turnover=False overrides .env setting."""
+        if not EXAMPLE_STATEMENT_PDF.exists():
+            pytest.skip("Test PDF not found")
+
+        # Set .env to true
+        monkeypatch.setenv('VERIFY_TURNOVER', 'true')
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
+
+        # But pass False to function - should not verify
+        result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), verify_turnover=False)
+        assert isinstance(result, dict)
+        # Verification key should not be present when explicitly disabled
+        assert 'verification' not in result

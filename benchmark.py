@@ -6,9 +6,15 @@ This script benchmarks all available PDF parsers against a directory of test PDF
 measuring parsing time, throughput, and success rates. Results are saved to CSV
 and displayed in a formatted table.
 
-Usage:
-    python benchmark.py --parsers=all --test-dir source-pdf --max-files 10
-    python benchmark.py --parsers=pymupdf,pdfplumber --test-dir source-pdf --max-workers 4
+Quick Start:
+    # Benchmark all parsers with 100 PDFs
+    python benchmark.py --test-dir source-pdf
+
+    # Benchmark only PyMuPDF with 1000 PDFs
+    python benchmark.py --test-dir source-pdf --parsers=pymupdf --max-files 1000
+
+    # Compare parsers with 500 PDFs using 8 workers
+    python benchmark.py --test-dir source-pdf --max-files 500 --max-workers 8
 
 Arguments:
     --parsers: Comma-separated list of parsers to benchmark (default: all)
@@ -16,6 +22,9 @@ Arguments:
     --test-dir: Directory containing PDF files to parse (required)
     --max-files: Maximum number of PDFs to process (default: all)
     --max-workers: Maximum parallel workers (default: 4)
+
+Output:
+    Results are saved to output/benchmark_results.csv
 """
 
 import argparse

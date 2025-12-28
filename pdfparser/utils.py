@@ -14,7 +14,6 @@ from typing import Dict, List, Optional, Pattern
 
 from dotenv import load_dotenv
 
-
 # =============================================================================
 # COMPILED REGEX PATTERNS - Pre-compiled at module level for performance
 # =============================================================================
@@ -358,11 +357,11 @@ def _format_number_for_csv(value: str) -> str:
     """
     Format number value for CSV output.
 
-    Converts Indonesian format (1.000.000,00) to standard format (1000000.00)
-    and removes any thousand separators.
+    Converts Indonesian format (1.000.000,00) or US format (1,000,000.00)
+    to standard format (1000000.00) without thousand separators.
 
     Args:
-        value: Number string in Indonesian or standard format
+        value: Number string in Indonesian, US, or standard format
 
     Returns:
         Clean number string without thousand separators
@@ -374,10 +373,42 @@ def _format_number_for_csv(value: str) -> str:
     if not any(c.isdigit() for c in value):
         return value
 
-    # Parse using Indonesian format parser and return as standard float string
-    parsed = parse_indonesian_number(value)
-    if parsed == 0.0:
-        return value
+    # Detect format and parse accordingly
+    original = value.strip()
+
+    # Check if both comma and period present
+    if ',' in original and '.' in original:
+        # Determine which is decimal separator by position
+        comma_pos = original.rfind(',')
+        period_pos = original.rfind('.')
+
+        if comma_pos > period_pos:
+            # Comma is after period - comma is decimal separator (Indonesian format)
+            # Example: 1.234.567,89
+            parsed = parse_indonesian_number(original)
+        else:
+            # Period is after comma - period is decimal separator (US format)
+            # Example: 1,234,567.89
+            # Remove commas (thousand separators)
+            cleaned = original.replace(',', '')
+            try:
+                parsed = float(cleaned)
+            except ValueError:
+                return original
+    elif ',' in original:
+        # Only comma present - US format with comma as thousand separator
+        # Example: 1,000,000
+        cleaned = original.replace(',', '')
+        try:
+            parsed = float(cleaned)
+        except ValueError:
+            return original
+    else:
+        # No comma - already in standard format (or Indonesian without decimal)
+        try:
+            parsed = float(original)
+        except ValueError:
+            return original
 
     # Format as standard number without thousand separators
     # Remove trailing .00 if it was an integer
