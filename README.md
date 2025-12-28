@@ -55,7 +55,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Basic Usage
+### Function Interface
 
 ```python
 from pdfparser import parse_pdf
@@ -78,6 +78,24 @@ print(result['metadata']['closing_balance'])
 # Access transactions
 for txn in result['transactions']:
     print(f"{txn['date']}: {txn['description']} - {txn['balance']}")
+```
+
+### Class Interface
+
+```python
+from pdfparser import PDFParser
+
+# Create parser with default settings (PyMuPDF parser)
+parser = PDFParser()
+result = parser.parse('statement.pdf')
+
+# Custom parser settings
+parser = PDFParser(parser='pymupdf', verify_turnover=True)
+result = parser.parse('statement.pdf')
+
+# Access results
+print(result['metadata']['account_no'])
+print(f"Transactions: {len(result['transactions'])}")
 ```
 
 ### Choosing a Parser
@@ -177,27 +195,34 @@ if is_valid_parse(metadata, transactions):
 
 ## Output Format
 
-### Metadata CSV
+CSV files use semicolon (;) as delimiter and standard number format (without thousand separators).
 
-| Field | Value |
-|-------|-------|
-| account_no | 041901001548309 |
-| business_unit | KC Kalimalang |
-| product_name | Giro Umum |
-| statement_date | 08/12/23 |
-| valuta | IDR |
-| unit_address | Jl. Kalimalang Blok C3 No.6 Rt.011 Rw.07 Kec. Duren Sawit, Jakarta Timur |
-| transaction_period | 01/11/23 - 30/11/23 |
-| opening_balance | 269,872,497.00 |
-| closing_balance | 297,930,854.00 |
-| total_debit | 47,104.00 |
-| total_credit | 28,105,461.00 |
+### Metadata CSV (metadata.csv)
 
-### Transactions CSV
+```csv
+Field;Value
+account_no;041901001548309
+business_unit;KC Kalimalang
+product_name;Giro Umum
+statement_date;08/12/23
+valuta;IDR
+unit_address;Jl. Kalimalang Blok C3 No.6 Rt.011 Rw.07 Kec. Duren Sawit, Jakarta Timur
+transaction_period;01/11/23 - 30/11/23
+opening_balance;269872497.00
+closing_balance;297930854.00
+total_debit;47104.00
+total_credit;28105461.00
+```
 
-| Date | Description | User | Debit | Credit | Balance |
-|------|-------------|------|-------|--------|---------|
-| 03/11/23 04:14:59 | NBMB UJANG SUMARWAN TO... | 8888083 | 0.00 | 25,000.00 | 269,897,497.00 |
+### Transactions CSV (transactions.csv)
+
+```csv
+Date;Description;User;Debit;Credit;Balance
+03/11/23 04:14:59;NBMB UJANG SUMARWAN TO...;8888083;0.00;25000.00;269897497.00
+03/11/23 04:15:30;Transfer Via BRImo;8888123;150000.00;0.00;269747497.00
+```
+
+**Number Format:** Indonesian format (1.000.000,00) is converted to standard format (1000000.00) without thousand separators.
 
 ## Configuration
 
@@ -309,18 +334,9 @@ uv run python benchmark.py --test-dir source-pdf --max-files 50
 # Compare PyMuPDF vs pdf_oxide with 500 PDFs
 uv run python benchmark.py --test-dir source-pdf --parsers=pymupdf,pdfoxide --max-files 500
 
-# Full benchmark with all parsers and 20000 PDFs (recommended for production testing)
-uv run python benchmark.py --test-dir source-pdf --max-files 20000 --max-workers 8
+# Full benchmark with all parsers and 2000 PDFs using 10 workers
+uv run python benchmark.py --test-dir source-pdf --max-files 2000 --max-workers 10
 ```
-
-### Performance Results (20,000 PDFs)
-
-| Parser | Time | Speed | Success Rate |
-|--------|------|-------|--------------|
-| PyMuPDF | ~25s | **819 docs/sec** | 100% |
-| pdf_oxide | ~52s | 386 docs/sec | 100% |
-| pypdf | ~317s | 63 docs/sec | 100% |
-| pdfplumber | ~645s | 31 docs/sec | 100% |
 
 ### Performance Results (2,000 PDFs, 10 Workers)
 
@@ -374,6 +390,27 @@ Parse a PDF bank statement file.
 
 **Returns:** dict with 'metadata', 'transactions', and optionally 'verification' keys
 
+### PDFParser
+
+Class-based interface for parsing Indonesian bank statement PDFs.
+
+```python
+from pdfparser import PDFParser
+
+# Create parser
+parser = PDFParser(parser='pymupdf', verify_turnover=None)
+
+# Parse PDF
+result = parser.parse('statement.pdf')
+```
+
+**Constructor Parameters:**
+- `parser`: Parser to use ('pymupdf', 'pdfplumber', 'pypdf', 'pdfoxide')
+- `verify_turnover`: Enable turnover verification (True/False/None for .env default)
+
+**Methods:**
+- `parse(path: str) -> dict`: Parse a PDF file (returns same result as parse_pdf())
+
 ### batch_parse(paths: list[str], parser_name: str = 'pymupdf', max_workers: int = None, output_dir: str = None) -> dict
 
 Process multiple PDF files in parallel using ProcessPoolExecutor.
@@ -400,7 +437,7 @@ b-pdf-parser/
 ├── tests/                  # Test suite with pytest
 │   ├── test_parsers.py    # Parser integration tests
 │   └── test_utils.py      # Utility function tests (72+ tests)
-├── source-pdf/            # Sample PDFs (21,000+ for benchmarking)
+├── source-pdf/            # Sample PDFs (21,000+ files for benchmarking)
 ├── test-pdfs/             # Generated test dataset
 ├── output/                # Parsed results
 │   ├── metadata/         # Metadata CSV outputs
