@@ -354,24 +354,64 @@ def extract_transactions(text: str) -> List[Dict[str, str]]:
     return transactions
 
 
+def _format_number_for_csv(value: str) -> str:
+    """
+    Format number value for CSV output.
+
+    Converts Indonesian format (1.000.000,00) to standard format (1000000.00)
+    and removes any thousand separators.
+
+    Args:
+        value: Number string in Indonesian or standard format
+
+    Returns:
+        Clean number string without thousand separators
+    """
+    if not value or not value.strip():
+        return ''
+
+    # Check if it looks like a number (contains digits and optionally . or ,)
+    if not any(c.isdigit() for c in value):
+        return value
+
+    # Parse using Indonesian format parser and return as standard float string
+    parsed = parse_indonesian_number(value)
+    if parsed == 0.0:
+        return value
+
+    # Format as standard number without thousand separators
+    # Remove trailing .00 if it was an integer
+    formatted = f'{parsed:.2f}'
+    if formatted.endswith('.00'):
+        formatted = formatted[:-3]
+    return formatted
+
+
 def save_metadata_csv(metadata: Dict[str, str], output_path: str) -> None:
     """
     Write metadata dict to CSV file with Field and Value columns.
+
+    Uses semicolon (;) as delimiter and formats numbers without thousand separators.
 
     Args:
         metadata: Dict of metadata fields
         output_path: Path where CSV file will be written
     """
     with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.writer(csvfile)
+        writer = csv.writer(csvfile, delimiter=';')
         writer.writerow(['Field', 'Value'])
         for field, value in metadata.items():
-            writer.writerow([field, value])
+            # Format numeric values
+            formatted_value = _format_number_for_csv(value) if value else ''
+            writer.writerow([field, formatted_value])
 
 
 def save_transactions_csv(transactions: List[Dict[str, str]], output_path: str) -> None:
     """
     Write transactions list to CSV file.
+
+    Uses semicolon (;) as delimiter and formats numbers without thousand separators.
+    Output columns: Date, Description, User, Debit, Credit, Balance
 
     Args:
         transactions: List of transaction dicts
@@ -380,14 +420,14 @@ def save_transactions_csv(transactions: List[Dict[str, str]], output_path: str) 
     if not transactions:
         # Write empty CSV with headers
         with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.writer(csvfile)
+            writer = csv.writer(csvfile, delimiter=';')
             writer.writerow(['Date', 'Description', 'User', 'Debit', 'Credit', 'Balance'])
         return
 
     fieldnames = ['Date', 'Description', 'User', 'Debit', 'Credit', 'Balance']
 
     with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=';')
         writer.writeheader()
 
         for txn in transactions:
@@ -395,9 +435,9 @@ def save_transactions_csv(transactions: List[Dict[str, str]], output_path: str) 
                 'Date': txn.get('date', ''),
                 'Description': txn.get('description', ''),
                 'User': txn.get('user', ''),
-                'Debit': txn.get('debit', ''),
-                'Credit': txn.get('credit', ''),
-                'Balance': txn.get('balance', '')
+                'Debit': _format_number_for_csv(txn.get('debit', '')),
+                'Credit': _format_number_for_csv(txn.get('credit', '')),
+                'Balance': _format_number_for_csv(txn.get('balance', ''))
             })
 
 
