@@ -37,6 +37,7 @@ env/
 # AI Assistant
 .claude/          # Claude Code cache and settings
 .serena/          # Serena plugin cache and settings
+.speckit/         # Speckit plugin cache and settings
 
 # Project-specific
 plan/              # Planning notes and drafts

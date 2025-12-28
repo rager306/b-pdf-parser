@@ -8,6 +8,7 @@ This module provides functions to parse PDF bank statements and extract:
 
 from pdfparser.pymupdf_parser import parse_pdf_pymupdf
 from pdfparser.pdfplumber_parser import parse_pdf_pdfplumber
+from pdfparser.pypdf_parser import parse_pdf_pypdf
 
 from pdfparser.utils import (
     extract_metadata,
@@ -42,7 +43,7 @@ def parse_pdf(path: str, parser: str = 'pymupdf') -> dict:
     elif parser == 'pdfplumber':
         return parse_pdf_pdfplumber(path)
     elif parser == 'pypdf':
-        raise NotImplementedError("pypdf parser coming in next phase")
+        return parse_pdf_pypdf(path)
     else:
         raise ValueError(f"Invalid parser: {parser}. Choose 'pymupdf', 'pdfplumber', or 'pypdf'")
 
@@ -51,6 +52,7 @@ __all__ = [
     'parse_pdf',
     'parse_pdf_pymupdf',
     'parse_pdf_pdfplumber',
+    'parse_pdf_pypdf',
     'extract_metadata',
     'extract_transactions',
     'save_metadata_csv',

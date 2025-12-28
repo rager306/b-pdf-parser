@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2024-12-28
+
+### Added
+
+- **pypdf parser implementation** (`pdfparser/pypdf_parser.py`)
+  - `parse_pdf_pypdf()` - Main parser using pure Python pypdf library
+  - No external C dependencies - fully portable
+  - Multiprocessing safe with no global state
+  - Compatible with Python 3.9
+- **Third parser option** - Users can now choose between 'pymupdf', 'pdfplumber', and 'pypdf'
+
+### Test Results
+
+| Parser | Example_statement.pdf | REKENING_KORAN...pdf | JAN-2024.pdf |
+|--------|----------------------|---------------------|--------------|
+| PyMuPDF | 47 txns, valid=True | 14 txns, valid=True | 15 txns, valid=True |
+| pdfplumber | 47 txns, valid=True | 14 txns, valid=True | 15 txns, valid=True |
+| pypdf | 47 txns, valid=True | 14 txns, valid=True | 15 txns, valid=True |
+
+### Known Limitations
+
+- Batch processing module (batch.py) not yet implemented
+- Benchmark script (benchmark.py) not yet implemented
+- Test data generator (generate_test_pdfs.py) not yet implemented
+
 ## [1.1.1] - 2024-12-28
 
 ### Fixed
@@ -73,7 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
-- Support for multiple PDF parsing libraries (PyMuPDF, pdfplumber, pypdf)
+- Support for multiple PDF parsing libraries (PyMuPDF, pdfplumber, pypdf - all implemented)
 - Multiprocessing support for batch processing 1000+ files
 - Performance benchmarking capabilities
 - English documentation throughout codebase
@@ -81,7 +106,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Known Limitations
 
-- pypdf parser (pypdf_parser.py) not yet implemented
 - Batch processing module (batch.py) not yet implemented
 - Benchmark script (benchmark.py) not yet implemented
 - Test data generator (generate_test_pdfs.py) not yet implemented

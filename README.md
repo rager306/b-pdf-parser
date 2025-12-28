@@ -5,7 +5,7 @@ A high-performance Python parser for Indonesian bank statements (Rekening Koran)
 ## Features
 
 - Native PDF parsing (no OCR)
-- Multiple parser implementations (PyMuPDF, pdfplumber)
+- Multiple parser implementations (PyMuPDF, pdfplumber, pypdf)
 - Multiprocessing support for batch processing
 - Performance benchmarking tools
 - Python 3.9 compatible
@@ -64,14 +64,15 @@ result = parse_pdf('statement.pdf', parser='pymupdf')
 # Use pdfplumber (better table extraction, text fallback)
 result = parse_pdf('statement.pdf', parser='pdfplumber')
 
-# Use pypdf (pure Python, available in future release)
-# result = parse_pdf('statement.pdf', parser='pypdf')
+# Use pypdf (pure Python, no external dependencies)
+result = parse_pdf('statement.pdf', parser='pypdf')
 ```
 
 | Parser | Speed | Best For |
 |--------|-------|----------|
 | PyMuPDF | Fastest | Column-based transaction format |
 | pdfplumber | Fast | Table extraction + inline text format |
+| pypdf | Medium | Portability, pure Python, multiprocessing safety |
 
 **Note:** Both parsers handle both Indonesian and English bank statement labels automatically.
 
@@ -276,6 +277,7 @@ b-pdf-parser/
 │   ├── __init__.py        # Public API, parse_pdf() dispatcher
 │   ├── pymupdf_parser.py  # PyMuPDF implementation (fast, column-based parsing)
 │   ├── pdfplumber_parser.py # pdfplumber implementation (table extraction + text fallback)
+│   ├── pypdf_parser.py    # pypdf implementation (pure Python, portable)
 │   └── utils.py           # Shared utilities (regex, CSV, validation)
 ├── source-pdf/            # Sample PDFs for testing
 ├── test-pdfs/             # Generated test dataset
