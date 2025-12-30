@@ -9,9 +9,10 @@ A high-performance Python parser for Indonesian bank statements (Rekening Koran)
 - **Turnover verification** - Compares PDF summary totals against calculated transaction sums
 - **Extended metadata extraction** - account_no, business_unit, product_name, statement_date, valuta, unit_address, transaction_period, opening_balance, closing_balance, total_debit, total_credit
 - **Multiprocessing support** for batch processing (2,000+ files tested)
-- **Performance benchmarking** - ~468 docs/sec with PyMuPDF (2,000 files, 10 workers)
+- **Dynamic worker scaling** - Auto-detect CPU cores, configurable 1-32 workers
+- **Performance benchmarking** - 500+ docs/sec with PyMuPDF (500 files, 12 workers)
 - **Regex optimization** - Pre-compiled patterns for 3% performance improvement
-- **Comprehensive test suite** with 72+ tests
+- **Comprehensive test suite** with 112+ tests (72 util + 40 batch)
 - **Handles both English and Indonesian** bank statement formats
 - **UV package management** for reproducible environments
 
@@ -256,17 +257,24 @@ VERIFY_TURNOVER=true
 
 ## Multiprocessing
 
-For processing large batches (1000+ files):
+For processing large batches (1000+ files) with optimized worker scaling:
 
 ```python
 from pdfparser import batch_parse, batch_parse_from_directory
 
-# Process multiple specific files in parallel
+# Get optimal worker count for this system
+from pdfparser.batch import get_optimal_workers
+workers = get_optimal_workers('pymupdf')
+print(f"Optimal workers: {workers}")  # Auto-detects CPU cores, capped at 16
+
+# Process multiple specific files in parallel with optimization
 pdf_files = ['file1.pdf', 'file2.pdf', ...]
 results = batch_parse(
     paths=pdf_files,
     parser_name='pymupdf',
-    max_workers=8,  # Use 8 CPU cores
+    max_workers=workers,  # Auto-detected or manual override (1-32)
+    chunk_size=100,       # Files per worker batch (default: 100)
+    init_strategy='per-worker',  # 'per-worker' or 'per-file'
     output_dir='output'
 )
 
@@ -274,15 +282,55 @@ results = batch_parse(
 results = batch_parse_from_directory(
     directory='/path/to/pdfs',
     parser_name='pymupdf',
-    max_workers=8
+    max_workers=workers,
+    chunk_size=100,
+    init_strategy='per-worker'
 )
+
+# Access performance metrics
+print(f"Throughput: {results['throughput']:.2f} docs/sec")
+print(f"Duration: {results['duration']:.2f}s")
+print(f"Worker overhead: {results['worker_overhead_percent']:.2f}%")
 ```
 
 **Output:** Results are saved to CSV files:
 - `output/metadata/{filename}_metadata.csv`
 - `output/transactions/{filename}_transactions.csv`
 
-**Returns:** Dict with `total`, `successful`, `failed`, `success_rate`, and `results` list.
+**Returns:** Dict with keys:
+- `total`: Total files processed
+- `successful`: Number of successful parses
+- `failed`: Number of failed parses
+- `success_rate`: Percentage of successful parses
+- `results`: List of individual file results
+- `duration`: Total processing time in seconds
+- `throughput`: Files processed per second
+- `memory_peak_mb`: Peak memory usage (if available)
+- `worker_overhead_percent`: Worker creation overhead percentage
+
+### Worker Configuration
+
+```python
+from pdfparser.batch import get_worker_config, WorkerConfig, validate_batch_params
+
+# Get optimized worker configuration
+config = get_worker_config(
+    parser_name='pymupdf',
+    max_workers=8,  # Optional override
+    init_strategy='per-worker'
+)
+print(f"Parser: {config.parser_name}")
+print(f"Max tasks per worker: {config.max_tasks_per_worker}")
+print(f"Init strategy: {config.init_strategy}")
+
+# Validate batch parameters before processing
+validate_batch_params(
+    parser_name='pymupdf',
+    max_workers=8,
+    chunk_size=100,
+    init_strategy='per-worker'
+)  # Raises ValueError if invalid
+```
 
 ## Benchmarking
 
@@ -411,9 +459,17 @@ result = parser.parse('statement.pdf')
 **Methods:**
 - `parse(path: str) -> dict`: Parse a PDF file (returns same result as parse_pdf())
 
-### batch_parse(paths: list[str], parser_name: str = 'pymupdf', max_workers: int = None, output_dir: str = None) -> dict
+### batch_parse(paths: list[str], parser_name: str = 'pymupdf', max_workers: int = None, output_dir: str = None, chunk_size: int = 100, init_strategy: str = 'per-worker') -> dict
 
 Process multiple PDF files in parallel using ProcessPoolExecutor.
+
+**Parameters:**
+- `paths`: List of PDF file paths to process
+- `parser_name`: Parser to use ('pymupdf', 'pdfplumber', 'pypdf', 'pdfoxide')
+- `max_workers`: Number of parallel workers (auto-detected if None, capped at 16)
+- `output_dir`: Output directory for CSV files
+- `chunk_size`: Files per worker batch (default: 100)
+- `init_strategy`: Parser initialization strategy ('per-worker' or 'per-file', default: 'per-worker')
 
 **Returns:** dict with keys:
 - `total`: Total files processed
@@ -421,6 +477,32 @@ Process multiple PDF files in parallel using ProcessPoolExecutor.
 - `failed`: Number of failed parses
 - `success_rate`: Percentage of successful parses
 - `results`: List of individual file results
+- `duration`: Total processing time in seconds
+- `throughput`: Files processed per second
+- `memory_peak_mb`: Peak memory usage
+- `worker_overhead_percent`: Worker creation overhead percentage
+
+### get_optimal_workers(parser_name: str = 'pymupdf') -> int
+
+Calculate optimal worker count based on system resources.
+
+**Returns:** Recommended worker count (4-16 range, based on CPU cores)
+
+### get_worker_config(parser_name: str, max_workers: int = None, init_strategy: str = 'per-worker') -> WorkerConfig
+
+Create optimized worker configuration.
+
+**Returns:** WorkerConfig dataclass with:
+- `parser_name`: Parser backend
+- `max_tasks_per_worker`: Max PDFs per worker (0 = unlimited)
+- `init_strategy`: Initialization strategy
+- `memory_limit_mb`: Memory limit (0 = unlimited)
+
+### validate_batch_params(parser_name: str, max_workers: int, chunk_size: int, init_strategy: str) -> None
+
+Validate batch processing parameters.
+
+**Raises:** ValueError if any parameter is invalid
 
 ## Project Structure
 
@@ -461,9 +543,10 @@ uv run pytest tests/ -v
 
 **Test Coverage:**
 - `tests/test_parsers.py`: Parser integration tests
-- `tests/test_utils.py`: Utility function tests with property-based testing
+- `tests/test_utils.py`: Utility function tests with property-based testing (72 tests)
+- `tests/test_batch.py`: Batch processing tests with worker optimization (40 tests)
 
-**72+ tests** with parametrized test cases covering all 4 parsers.
+**112+ tests** with parametrized test cases covering all 4 parsers and batch processing.
 
 ### Code Quality
 

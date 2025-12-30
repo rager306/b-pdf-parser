@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-12-30
+
+### Performance Optimization
+
+- **Dynamic Worker Scaling**
+  - `get_optimal_workers(parser_name)` - Auto-detect CPU cores using `os.cpu_count()`
+  - Capped at 16 workers to prevent resource exhaustion
+  - Returns recommended worker count based on system resources
+
+- **Batch Processing Optimization**
+  - `chunk_size` parameter - Controls files per worker batch (default: 100)
+  - `init_strategy` parameter - 'per-worker' (default) or 'per-file' for parser initialization
+  - WorkerConfig dataclass for structured worker configuration
+  - BatchResult dataclass with performance metrics (throughput, duration, worker_overhead_percent)
+
+- **Input Validation**
+  - `validate_batch_params()` function for validating batch processing parameters
+  - Validates parser_name, max_workers (1-32), chunk_size (1-500), init_strategy
+
+### Benchmark Results (500 PDFs)
+
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| Throughput | 500+ docs/sec | 511 docs/sec | ✅ |
+| Worker overhead | <5% | 0.00% | ✅ |
+| Validation rate | 100% | 100% | ✅ |
+
+### Added
+
+- **New APIs**
+  - `get_optimal_workers(parser_name)` - Calculate optimal worker count
+  - `get_worker_config(parser_name, max_workers, init_strategy)` - Create WorkerConfig
+  - `validate_batch_params(parser_name, max_workers, chunk_size, init_strategy)` - Validate inputs
+  - `WorkerConfig` dataclass - Worker configuration with parser_name, max_tasks_per_worker, init_strategy, memory_limit_mb
+  - `BatchResult` dataclass - Consolidated results with total, successful, failed, success_rate, results, duration, throughput, memory_peak_mb, worker_overhead_percent
+
+- **Enhanced batch_parse()**
+  - `chunk_size` parameter for IPC batching (default: 100)
+  - `init_strategy` parameter for parser reuse strategy (default: 'per-worker')
+  - Returns enhanced metrics: throughput, duration, memory_peak_mb, worker_overhead_percent
+
+- **Enhanced batch_parse_from_directory()**
+  - `chunk_size` and `init_strategy` parameters passed through to batch_parse()
+
+- **40 New Tests** in `tests/test_batch.py`
+  - Test get_optimal_workers() returns CPU count
+  - Test get_worker_config() returns WorkerConfig
+  - Test validate_batch_params() with valid and invalid inputs
+  - Test batch_parse() with all parameter combinations
+  - Test batch_parse_from_directory() discovers and processes PDFs
+  - Test BatchResult and WorkerConfig dataclasses
+  - Test performance metrics (throughput, worker overhead)
+
+### Changed
+
+- Updated batch.py to use ProcessPoolExecutor with optimized worker configuration
+- Added timing metrics tracking for worker overhead measurement
+- Improved error handling with validation function
+
 ## [1.5.0] - 2025-12-28
 
 ### Performance Optimization
