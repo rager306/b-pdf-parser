@@ -599,8 +599,9 @@ def extract_summary_totals(text: str) -> Dict[str, Optional[str]]:
             line = lines[i].strip()
             if _numeric_line_match(line):
                 values.append((i, line))
-            elif line and not _numeric_only_match(line):
+            elif line:
                 # If we hit a non-number line, might be end of values section
+                # Note: _numeric_line_match already handles checking for numeric content
                 if len(values) >= 2:
                     break
 

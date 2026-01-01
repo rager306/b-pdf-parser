@@ -8,11 +8,7 @@ Tests cover:
 - Validation of inputs
 """
 
-import os
-import tempfile
 import time
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -25,7 +21,6 @@ from pdfparser.batch import (
     get_worker_config,
     validate_batch_params,
 )
-from pdfparser.utils import load_config
 
 
 class TestGetOptimalWorkers:
@@ -376,7 +371,6 @@ class TestPerformanceMetrics:
 
         # Throughput should be approximately files/duration
         if duration > 0:
-            expected_throughput = len(files) / duration
             # Allow some variance due to process startup overhead
             assert result['throughput'] > 0
 
