@@ -49,6 +49,7 @@ claude.md          # AI assistant instructions
 .coverage
 htmlcov/
 *.cover
+.hypothesis/
 
 # Code quality tools
 .ruffcache/
