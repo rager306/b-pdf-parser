@@ -46,6 +46,7 @@ claude.md          # AI assistant instructions
 
 # Testing
 .pytest_cache/
+.hypothesis/
 .coverage
 htmlcov/
 *.cover
