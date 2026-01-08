@@ -25,7 +25,6 @@ from pdfparser.batch import (
     get_worker_config,
     validate_batch_params,
 )
-from pdfparser.utils import load_config
 
 
 class TestGetOptimalWorkers:
@@ -370,15 +369,11 @@ class TestPerformanceMetrics:
             file_path.write_text('%PDF-1.4 mock PDF content')
             files.append(str(file_path))
 
-        start = time.time()
         result = batch_parse(files, parser_name='pymupdf')
-        duration = time.time() - start
+        # Duration is implicitly calculated inside batch_parse
 
-        # Throughput should be approximately files/duration
-        if duration > 0:
-            expected_throughput = len(files) / duration
-            # Allow some variance due to process startup overhead
-            assert result['throughput'] > 0
+        # Check if throughput is reasonable
+        assert result['throughput'] > 0
 
     def test_worker_overhead_tracking(self, tmp_path):
         """Test that worker overhead is tracked."""
