@@ -199,6 +199,7 @@ class TestVerifyTurnover:
 
         # Import to get fresh config with overridden env var
         import importlib
+
         import pdfparser.utils
         importlib.reload(pdfparser.utils)
 

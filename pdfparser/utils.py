@@ -80,7 +80,6 @@ TOTAL_CREDIT_TRANSACTION_PATTERN: Pattern = re.compile(
 # Additional compiled patterns for faster lookups
 _WHITESPACE_PATTERN: Pattern = re.compile(r'\s+')
 _NUMERIC_LINE_PATTERN: Pattern = re.compile(r'^[\d,.]+\s*$')
-_NUMERIC_ONLY_PATTERN: Pattern = re.compile(r'^[\d,.]*$')
 _AMOUNT_PATTERN: Pattern = re.compile(r'^[\d,]+\.\d{2}$')
 _USER_ID_PATTERN: Pattern = re.compile(r'^\d{6,8}$')
 
@@ -572,7 +571,6 @@ def extract_summary_totals(text: str) -> Dict[str, Optional[str]]:
     n = len(lines)
 
     # Cache compiled patterns for hot loop optimization
-    _numeric_only_match = _NUMERIC_ONLY_PATTERN.match
     _numeric_line_match = _NUMERIC_LINE_PATTERN.match
 
     # Find positions of unique summary labels (deduplicate)
@@ -599,7 +597,7 @@ def extract_summary_totals(text: str) -> Dict[str, Optional[str]]:
             line = lines[i].strip()
             if _numeric_line_match(line):
                 values.append((i, line))
-            elif line and not _numeric_only_match(line):
+            elif line:
                 # If we hit a non-number line, might be end of values section
                 if len(values) >= 2:
                     break
