@@ -52,6 +52,7 @@ htmlcov/
 
 # Code quality tools
 .ruffcache/
+.hypothesis/
 
 # Logs
 *.log
