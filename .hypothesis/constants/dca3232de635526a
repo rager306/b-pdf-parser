@@ -1,0 +1,4 @@
+# file: /app/pdfparser/pdfplumber_parser.py
+# hypothesis_version: 6.150.2
+
+['(\\d{10,16})', 'Balance', 'Credit', 'Debet', 'Debit', 'Kredit', 'Opening Balance', 'Saldo', 'Tanggal Transaksi', 'Teller', 'Total Transaksi', 'Transaction Date', 'Uraian Transaksi', 'User ID', 'account_no', 'balance', 'business_unit', 'closing_balance', 'credit', 'date', 'debit', 'description', 'full_text', 'metadata', 'opening_balance', 'product_name', 'statement_date', 'total_credit', 'total_debit', 'transactions', 'user']

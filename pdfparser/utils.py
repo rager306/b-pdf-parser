@@ -599,10 +599,12 @@ def extract_summary_totals(text: str) -> Dict[str, Optional[str]]:
             line = lines[i].strip()
             if _numeric_line_match(line):
                 values.append((i, line))
-            elif line and not _numeric_only_match(line):
-                # If we hit a non-number line, might be end of values section
-                if len(values) >= 2:
-                    break
+            else:
+                is_non_numeric = _numeric_only_match(line) is None
+                if len(line) > 0 and is_non_numeric:
+                    # If we hit a non-number line, might be end of values section
+                    if len(values) >= 2:
+                        break
 
         # Map labels to values based on order
         # Each label gets the next value in sequence
