@@ -59,11 +59,12 @@ def parse_pdf_pypdf(path: str) -> Dict[str, Any]:
         metadata = extract_metadata(header_text)
 
         # Fallback: extract account_no from filename if not found in text
-        if not metadata.get('account_no'):
+        if not metadata.get("account_no"):
             import re
-            acct_match = re.search(r'(\d{10,16})', path_obj.stem)
+
+            acct_match = re.search(r"(\d{10,16})", path_obj.stem)
             if acct_match:
-                metadata['account_no'] = acct_match.group(1)
+                metadata["account_no"] = acct_match.group(1)
 
         # Extract transactions from all pages
         all_text = ""
@@ -74,20 +75,16 @@ def parse_pdf_pypdf(path: str) -> Dict[str, Any]:
 
         # Extract summary totals and add to metadata
         summary = extract_summary_totals(all_text)
-        if summary.get('total_debit'):
-            metadata['total_debit'] = summary['total_debit']
-        if summary.get('total_credit'):
-            metadata['total_credit'] = summary['total_credit']
-        if summary.get('opening_balance'):
-            metadata['opening_balance'] = summary['opening_balance']
-        if summary.get('closing_balance'):
-            metadata['closing_balance'] = summary['closing_balance']
+        if summary.get("total_debit"):
+            metadata["total_debit"] = summary["total_debit"]
+        if summary.get("total_credit"):
+            metadata["total_credit"] = summary["total_credit"]
+        if summary.get("opening_balance"):
+            metadata["opening_balance"] = summary["opening_balance"]
+        if summary.get("closing_balance"):
+            metadata["closing_balance"] = summary["closing_balance"]
 
-        return {
-            'metadata': metadata,
-            'transactions': transactions,
-            'full_text': all_text
-        }
+        return {"metadata": metadata, "transactions": transactions, "full_text": all_text}
 
     except FileNotFoundError:
         raise

@@ -45,23 +45,24 @@ from pdfparser.utils import (
 
 # Parser mapping
 PARSERS = {
-    'pymupdf': parse_pdf_pymupdf,
-    'pdfplumber': parse_pdf_pdfplumber,
-    'pypdf': parse_pdf_pypdf,
-    'pdfoxide': parse_pdf_pdfoxide,
+    "pymupdf": parse_pdf_pymupdf,
+    "pdfplumber": parse_pdf_pdfplumber,
+    "pypdf": parse_pdf_pypdf,
+    "pdfoxide": parse_pdf_pdfoxide,
 }
 
 # Constants
 DEFAULT_CHUNK_SIZE = 100
-DEFAULT_INIT_STRATEGY = 'per-worker'
+DEFAULT_INIT_STRATEGY = "per-worker"
 MAX_WORKERS_CAP = 16
-VALID_PARSERS = ['pymupdf', 'pdfplumber', 'pypdf', 'pdfoxide']
-VALID_INIT_STRATEGIES = ['per-file', 'per-worker']
+VALID_PARSERS = ["pymupdf", "pdfplumber", "pypdf", "pdfoxide"]
+VALID_INIT_STRATEGIES = ["per-file", "per-worker"]
 
 
 @dataclass
 class WorkerConfig:
     """Configuration for worker process behavior."""
+
     parser_name: str
     max_tasks_per_worker: int = 0  # 0 = unlimited
     init_strategy: str = DEFAULT_INIT_STRATEGY
@@ -71,6 +72,7 @@ class WorkerConfig:
 @dataclass
 class BatchResult:
     """Consolidated result from batch processing."""
+
     total: int = 0
     successful: int = 0
     failed: int = 0
@@ -82,7 +84,7 @@ class BatchResult:
     worker_overhead_percent: float = 0.0
 
 
-def get_optimal_workers(parser_name: str = 'pymupdf') -> int:
+def get_optimal_workers(parser_name: str = "pymupdf") -> int:
     """
     Calculate optimal worker count based on system resources.
 
@@ -152,13 +154,13 @@ def process_single_file(args: tuple) -> Dict[str, Any]:
     file_path, parser_name, init_strategy = args
 
     result = {
-        'success': False,
-        'file_path': file_path,
-        'file_name': os.path.basename(file_path),
-        'metadata': {},
-        'transactions': [],
-        'error': None,
-        'is_valid': False,
+        "success": False,
+        "file_path": file_path,
+        "file_name": os.path.basename(file_path),
+        "metadata": {},
+        "transactions": [],
+        "error": None,
+        "is_valid": False,
     }
 
     try:
@@ -170,20 +172,20 @@ def process_single_file(args: tuple) -> Dict[str, Any]:
         # Parse the PDF
         parse_result = parser_func(file_path)
 
-        metadata = parse_result.get('metadata', {})
-        transactions = parse_result.get('transactions', [])
+        metadata = parse_result.get("metadata", {})
+        transactions = parse_result.get("transactions", [])
 
-        result['metadata'] = metadata
-        result['transactions'] = transactions
-        result['success'] = True
-        result['is_valid'] = is_valid_parse(metadata, transactions)
+        result["metadata"] = metadata
+        result["transactions"] = transactions
+        result["success"] = True
+        result["is_valid"] = is_valid_parse(metadata, transactions)
 
     except FileNotFoundError:
-        result['error'] = f'File not found: {file_path}'
+        result["error"] = f"File not found: {file_path}"
     except PermissionError:
-        result['error'] = f'Permission denied: {file_path}'
+        result["error"] = f"Permission denied: {file_path}"
     except Exception as e:  # pylint: disable=broad-except
-        result['error'] = str(e)
+        result["error"] = str(e)
 
     return result
 
@@ -203,18 +205,18 @@ def save_result_files(
         metadata_dir: Subdirectory for metadata CSVs
         transactions_dir: Subdirectory for transaction CSVs
     """
-    file_name = result['file_name']
+    file_name = result["file_name"]
     base_name = os.path.splitext(file_name)[0]
 
     # Save metadata CSV
-    if result['metadata']:
-        metadata_path = os.path.join(metadata_dir, f'{base_name}_metadata.csv')
-        save_metadata_csv(result['metadata'], metadata_path)
+    if result["metadata"]:
+        metadata_path = os.path.join(metadata_dir, f"{base_name}_metadata.csv")
+        save_metadata_csv(result["metadata"], metadata_path)
 
     # Save transactions CSV
-    if result['transactions']:
-        transactions_path = os.path.join(transactions_dir, f'{base_name}_transactions.csv')
-        save_transactions_csv(result['transactions'], transactions_path)
+    if result["transactions"]:
+        transactions_path = os.path.join(transactions_dir, f"{base_name}_transactions.csv")
+        save_transactions_csv(result["transactions"], transactions_path)
 
 
 def validate_batch_params(
@@ -236,30 +238,22 @@ def validate_batch_params(
         ValueError: If any parameter is invalid
     """
     if parser_name not in VALID_PARSERS:
-        raise ValueError(
-            f"Invalid parser: {parser_name}. Choose from: {', '.join(VALID_PARSERS)}"
-        )
+        raise ValueError(f"Invalid parser: {parser_name}. Choose from: {', '.join(VALID_PARSERS)}")
 
     if max_workers is not None:
         if not isinstance(max_workers, int) or max_workers < 1 or max_workers > 32:
-            raise ValueError(
-                f"max_workers must be between 1 and 32, got: {max_workers}"
-            )
+            raise ValueError(f"max_workers must be between 1 and 32, got: {max_workers}")
 
     if chunk_size < 1 or chunk_size > 500:
-        raise ValueError(
-            f"chunk_size must be between 1 and 500, got: {chunk_size}"
-        )
+        raise ValueError(f"chunk_size must be between 1 and 500, got: {chunk_size}")
 
     if init_strategy not in VALID_INIT_STRATEGIES:
-        raise ValueError(
-            f"init_strategy must be 'per-file' or 'per-worker', got: {init_strategy}"
-        )
+        raise ValueError(f"init_strategy must be 'per-file' or 'per-worker', got: {init_strategy}")
 
 
 def batch_parse(
     paths: List[str],
-    parser_name: str = 'pymupdf',
+    parser_name: str = "pymupdf",
     max_workers: Optional[int] = None,
     output_dir: Optional[str] = None,
     verify_turnover: Optional[bool] = None,
@@ -299,27 +293,27 @@ def batch_parse(
 
     if not paths:
         return {
-            'total': 0,
-            'successful': 0,
-            'failed': 0,
-            'results': [],
-            'success_rate': 0.0,
-            'duration': 0.0,
-            'throughput': 0.0,
-            'memory_peak_mb': 0.0,
-            'worker_overhead_percent': 0.0,
+            "total": 0,
+            "successful": 0,
+            "failed": 0,
+            "results": [],
+            "success_rate": 0.0,
+            "duration": 0.0,
+            "throughput": 0.0,
+            "memory_peak_mb": 0.0,
+            "worker_overhead_percent": 0.0,
         }
 
     # Load configuration
     config = load_config()
     if output_dir is None:
-        output_dir = config.get('output_dir', 'output')
+        output_dir = config.get("output_dir", "output")
     if verify_turnover is None:
-        verify_turnover = bool(config.get('verify_turnover', False))
+        verify_turnover = bool(config.get("verify_turnover", False))
 
     # Create output subdirectories
-    metadata_dir = os.path.join(output_dir, 'metadata')
-    transactions_dir = os.path.join(output_dir, 'transactions')
+    metadata_dir = os.path.join(output_dir, "metadata")
+    transactions_dir = os.path.join(output_dir, "transactions")
     os.makedirs(metadata_dir, exist_ok=True)
     os.makedirs(transactions_dir, exist_ok=True)
 
@@ -337,15 +331,15 @@ def batch_parse(
 
     if not valid_paths:
         return {
-            'total': 0,
-            'successful': 0,
-            'failed': len(paths),
-            'results': [],
-            'success_rate': 0.0,
-            'duration': 0.0,
-            'throughput': 0.0,
-            'memory_peak_mb': 0.0,
-            'worker_overhead_percent': 0.0,
+            "total": 0,
+            "successful": 0,
+            "failed": len(paths),
+            "results": [],
+            "success_rate": 0.0,
+            "duration": 0.0,
+            "throughput": 0.0,
+            "memory_peak_mb": 0.0,
+            "worker_overhead_percent": 0.0,
         }
 
     # Prepare tasks for parallel execution
@@ -369,9 +363,7 @@ def batch_parse(
 
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         # Submit all tasks
-        futures = {
-            executor.submit(process_single_file, task): task for task in tasks
-        }
+        futures = {executor.submit(process_single_file, task): task for task in tasks}
 
         # Collect results as they complete
         for future in as_completed(futures):
@@ -379,7 +371,7 @@ def batch_parse(
                 result = future.result()
                 results.append(result)
 
-                if result['success']:
+                if result["success"]:
                     successful += 1
                     # Save result files for successful parses
                     save_result_files(result, output_dir, metadata_dir, transactions_dir)
@@ -387,16 +379,16 @@ def batch_parse(
                     failed += 1
 
                 # Trigger garbage collection for memory management
-                if init_strategy == 'per-file':
+                if init_strategy == "per-file":
                     gc.collect()
 
             except Exception as e:  # pylint: disable=broad-except
                 task = futures[future]
                 error_result = {
-                    'success': False,
-                    'file_path': task[0],
-                    'file_name': os.path.basename(task[0]),
-                    'error': str(e),
+                    "success": False,
+                    "file_path": task[0],
+                    "file_name": os.path.basename(task[0]),
+                    "error": str(e),
                 }
                 results.append(error_result)
                 failed += 1
@@ -410,24 +402,24 @@ def batch_parse(
     throughput = total / duration if duration > 0 else 0.0
 
     return {
-        'total': total,
-        'successful': successful,
-        'failed': failed,
-        'results': results,
-        'success_rate': (successful / total * 100) if total > 0 else 0.0,
-        'duration': duration,
-        'throughput': throughput,
-        'memory_peak_mb': memory_peak,
-        'worker_overhead_percent': worker_overhead_percent,
+        "total": total,
+        "successful": successful,
+        "failed": failed,
+        "results": results,
+        "success_rate": (successful / total * 100) if total > 0 else 0.0,
+        "duration": duration,
+        "throughput": throughput,
+        "memory_peak_mb": memory_peak,
+        "worker_overhead_percent": worker_overhead_percent,
     }
 
 
 def batch_parse_from_directory(
     directory: str,
-    parser_name: str = 'pymupdf',
+    parser_name: str = "pymupdf",
     max_workers: Optional[int] = None,
     output_dir: Optional[str] = None,
-    pattern: str = '**/*.pdf',
+    pattern: str = "**/*.pdf",
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     init_strategy: str = DEFAULT_INIT_STRATEGY,
 ) -> Dict[str, Any]:
@@ -453,20 +445,20 @@ def batch_parse_from_directory(
     pdf_files = []
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.lower().endswith('.pdf'):
+            if file.lower().endswith(".pdf"):
                 pdf_files.append(os.path.join(root, file))
 
     if not pdf_files:
         return {
-            'total': 0,
-            'successful': 0,
-            'failed': 0,
-            'results': [],
-            'success_rate': 0.0,
-            'duration': 0.0,
-            'throughput': 0.0,
-            'memory_peak_mb': 0.0,
-            'worker_overhead_percent': 0.0,
+            "total": 0,
+            "successful": 0,
+            "failed": 0,
+            "results": [],
+            "success_rate": 0.0,
+            "duration": 0.0,
+            "throughput": 0.0,
+            "memory_peak_mb": 0.0,
+            "worker_overhead_percent": 0.0,
         }
 
     # Sort for consistent ordering

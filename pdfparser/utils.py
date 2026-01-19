@@ -21,81 +21,75 @@ from dotenv import load_dotenv
 # Metadata extraction patterns (label-based)
 # Format varies: either "Label:\nValue" or "Label\nLabel\n:\nValue"
 ACCOUNT_NO_PATTERN: Pattern = re.compile(
-    r'No\.?\s*Rekening\s*\n(?:Account\s+No\s*\n)?\s*:?\s*([0-9]+)',
-    re.IGNORECASE
+    r"No\.?\s*Rekening\s*\n(?:Account\s+No\s*\n)?\s*:?\s*([0-9]+)", re.IGNORECASE
 )
 BUSINESS_UNIT_PATTERN: Pattern = re.compile(
-    r'(?:Unit\s+Kerja\s*\n)?Business\s+Unit\s*\n\s*:\s*\n\s*([^\n]+)',
-    re.IGNORECASE
+    r"(?:Unit\s+Kerja\s*\n)?Business\s+Unit\s*\n\s*:\s*\n\s*([^\n]+)", re.IGNORECASE
 )
 PRODUCT_NAME_PATTERN: Pattern = re.compile(
-    r'(?:Nama\s+Produk\s*\n)?Product\s+Name\s*[:\s]*([A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)*(?:\.[A-Za-z]+)?)',
-    re.IGNORECASE
+    r"(?:Nama\s+Produk\s*\n)?Product\s+Name\s*[:\s]*([A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)*(?:\.[A-Za-z]+)?)",
+    re.IGNORECASE,
 )
-STATEMENT_DATE_PATTERN: Pattern = re.compile(
-    r'Statement\s+Date\s*[:\s]*([^\n]+)',
-    re.IGNORECASE
-)
+STATEMENT_DATE_PATTERN: Pattern = re.compile(r"Statement\s+Date\s*[:\s]*([^\n]+)", re.IGNORECASE)
 VALUTA_PATTERN: Pattern = re.compile(
-    r'(?:Valuta|Currency)\s*\n(?:Currency|Valuta)?\s*\n\s*:?\s*([A-Z]{3})',
-    re.IGNORECASE
+    r"(?:Valuta|Currency)\s*\n(?:Currency|Valuta)?\s*\n\s*:?\s*([A-Z]{3})", re.IGNORECASE
 )
 TRANSACTION_PERIOD_PATTERN: Pattern = re.compile(
-    r'(?:Periode\s+Transaksi|Transaction\s+Period)\s*\n(?:Transaction\s+Periode|Transaction\s+Period)?\s*\n\s*:\s*\n\s*([^\n]+)',
-    re.IGNORECASE
+    r"(?:Periode\s+Transaksi|Transaction\s+Period)\s*\n(?:Transaction\s+Periode|Transaction\s+Period)?\s*\n\s*:\s*\n\s*([^\n]+)",
+    re.IGNORECASE,
 )
 UNIT_ADDRESS_PATTERN: Pattern = re.compile(
-    r'(?:Alamat\s+Unit\s+Kerja|Business\s+Unit\s+Address)\s*\n\s*:\s*\n\s*([A-Za-z][^\n]*(?:\s+[A-Za-z][^\n]*)?)',
-    re.IGNORECASE
+    r"(?:Alamat\s+Unit\s+Kerja|Business\s+Unit\s+Address)\s*\n\s*:\s*\n\s*([A-Za-z][^\n]*(?:\s+[A-Za-z][^\n]*)?)",
+    re.IGNORECASE,
 )
 
 # Transaction row pattern - date anchor (DD/MM/YY format, not YYYY)
-TRANSACTION_DATE_PATTERN: Pattern = re.compile(r'^\d{2}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}')
+TRANSACTION_DATE_PATTERN: Pattern = re.compile(r"^\d{2}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}")
 
 # Full transaction line pattern - parses inline transaction rows
 # Captures: date, description, user, debit (optional), credit (optional), balance
 TRANSACTION_LINE_PATTERN: Pattern = re.compile(
-    r'^(\d{2}/\d{2}/\d{2})\s+(.+?)\s+(\w+)\s+([\d,.]+)?\s+([\d,.]+)?\s+([\d,.]+)'
+    r"^(\d{2}/\d{2}/\d{2})\s+(.+?)\s+(\w+)\s+([\d,.]+)?\s+([\d,.]+)?\s+([\d,.]+)"
 )
 
 # Summary total patterns for turnover verification
 # Matches Indonesian format: thousands separator '.', decimal separator ','
 TOTAL_TRANSaksi_DEBET_PATTERN: Pattern = re.compile(
-    r'Total\s+Transaksi\s+Debet\s*[:\s]*([\d\.,]+)',
-    re.IGNORECASE
+    r"Total\s+Transaksi\s+Debet\s*[:\s]*([\d\.,]+)", re.IGNORECASE
 )
 TOTAL_DEBIT_TRANSACTION_PATTERN: Pattern = re.compile(
-    r'Total\s+Debit\s+Transaction\s*[:\s]*([\d\.,]+)',
-    re.IGNORECASE
+    r"Total\s+Debit\s+Transaction\s*[:\s]*([\d\.,]+)", re.IGNORECASE
 )
 TOTAL_TRANSaksi_KREDIT_PATTERN: Pattern = re.compile(
-    r'Total\s+Transaksi\s+Kredit\s*[:\s]*([\d\.,]+)',
-    re.IGNORECASE
+    r"Total\s+Transaksi\s+Kredit\s*[:\s]*([\d\.,]+)", re.IGNORECASE
 )
 TOTAL_CREDIT_TRANSACTION_PATTERN: Pattern = re.compile(
-    r'Total\s+Credit\s+Transaction\s*[:\s]*([\d\.,]+)',
-    re.IGNORECASE
+    r"Total\s+Credit\s+Transaction\s*[:\s]*([\d\.,]+)", re.IGNORECASE
 )
 
 # Additional compiled patterns for faster lookups
-_WHITESPACE_PATTERN: Pattern = re.compile(r'\s+')
-_NUMERIC_LINE_PATTERN: Pattern = re.compile(r'^[\d,.]+\s*$')
-_NUMERIC_ONLY_PATTERN: Pattern = re.compile(r'^[\d,.]*$')
-_AMOUNT_PATTERN: Pattern = re.compile(r'^[\d,]+\.\d{2}$')
-_USER_ID_PATTERN: Pattern = re.compile(r'^\d{6,8}$')
+_WHITESPACE_PATTERN: Pattern = re.compile(r"\s+")
+_NUMERIC_LINE_PATTERN: Pattern = re.compile(r"^[\d,.]+\s*$")
+_NUMERIC_ONLY_PATTERN: Pattern = re.compile(r"^[\d,.]*$")
+_AMOUNT_PATTERN: Pattern = re.compile(r"^[\d,]+\.\d{2}$")
+_USER_ID_PATTERN: Pattern = re.compile(r"^\d{6,8}$")
 
 # Summary section label patterns (compiled for extract_summary_totals)
-_SALDO_AWAL_PATTERN: Pattern = re.compile(r'^Saldo\s+Awal$|^Opening\s+Balance$', re.IGNORECASE)
-_TOTAL_DEBIT_LABEL_PATTERN: Pattern = re.compile(r'^Total\s+Transaksi\s+Debet$|^Total\s+Debit\s+Transaction$', re.IGNORECASE)
-_TOTAL_CREDIT_LABEL_PATTERN: Pattern = re.compile(r'^Total\s+Transaksi\s+Kredit$|^Total\s+Credit\s+Transaction$', re.IGNORECASE)
-_SALDO_AKHIR_PATTERN: Pattern = re.compile(r'^Saldo\s+Akhir$|^Closing\s+Balance$', re.IGNORECASE)
+_SALDO_AWAL_PATTERN: Pattern = re.compile(r"^Saldo\s+Awal$|^Opening\s+Balance$", re.IGNORECASE)
+_TOTAL_DEBIT_LABEL_PATTERN: Pattern = re.compile(
+    r"^Total\s+Transaksi\s+Debet$|^Total\s+Debit\s+Transaction$", re.IGNORECASE
+)
+_TOTAL_CREDIT_LABEL_PATTERN: Pattern = re.compile(
+    r"^Total\s+Transaksi\s+Kredit$|^Total\s+Credit\s+Transaction$", re.IGNORECASE
+)
+_SALDO_AKHIR_PATTERN: Pattern = re.compile(r"^Saldo\s+Akhir$|^Closing\s+Balance$", re.IGNORECASE)
 
 # Summary label patterns mapping
 _SUMMARY_LABEL_PATTERNS: List[tuple] = [
-    (_SALDO_AWAL_PATTERN, 'opening_balance'),
-    (_TOTAL_DEBIT_LABEL_PATTERN, 'total_debit'),
-    (_TOTAL_CREDIT_LABEL_PATTERN, 'total_credit'),
-    (_SALDO_AKHIR_PATTERN, 'closing_balance'),
+    (_SALDO_AWAL_PATTERN, "opening_balance"),
+    (_TOTAL_DEBIT_LABEL_PATTERN, "total_debit"),
+    (_TOTAL_CREDIT_LABEL_PATTERN, "total_credit"),
+    (_SALDO_AKHIR_PATTERN, "closing_balance"),
 ]
 
 
@@ -135,10 +129,10 @@ def load_config() -> Dict[str, str]:
     load_dotenv()
 
     return {
-        'source_pdf_dir': os.getenv('SOURCE_PDF_DIR', 'source-pdf'),
-        'output_dir': os.getenv('OUTPUT_DIR', 'output'),
-        'test_pdfs_dir': os.getenv('TEST_PDFS_DIR', 'test-pdfs'),
-        'verify_turnover': os.getenv('VERIFY_TURNOVER', 'false')
+        "source_pdf_dir": os.getenv("SOURCE_PDF_DIR", "source-pdf"),
+        "output_dir": os.getenv("OUTPUT_DIR", "output"),
+        "test_pdfs_dir": os.getenv("TEST_PDFS_DIR", "test-pdfs"),
+        "verify_turnover": os.getenv("VERIFY_TURNOVER", "false"),
     }
 
 
@@ -161,11 +155,24 @@ def extract_metadata(text: str) -> Dict[str, str]:
 
     # Labels that indicate this is a label, not a value
     # Using frozenset for faster membership testing (O(1) vs O(n))
-    _LABEL_INDICATORS = frozenset([
-        'unit kerja', 'nama produk', 'alamat unit', 'valuta', 'currency',
-        'tanggal transaksi', 'uraian transaksi', 'teller', 'user id',
-        'debet', 'kredit', 'saldo', 'transaction date', 'transaction description'
-    ])
+    _LABEL_INDICATORS = frozenset(
+        [
+            "unit kerja",
+            "nama produk",
+            "alamat unit",
+            "valuta",
+            "currency",
+            "tanggal transaksi",
+            "uraian transaksi",
+            "teller",
+            "user id",
+            "debet",
+            "kredit",
+            "saldo",
+            "transaction date",
+            "transaction description",
+        ]
+    )
 
     # Cache local functions for hot path optimization
     _is_likely_label = _LABEL_INDICATORS.__contains__
@@ -177,33 +184,33 @@ def extract_metadata(text: str) -> Dict[str, str]:
 
     # Extract Account No
     account_match = ACCOUNT_NO_PATTERN.search(text)
-    account_no = account_match.group(1).strip() if account_match else ''
+    account_no = account_match.group(1).strip() if account_match else ""
     # Validate: if it looks like a label, treat as empty
     if is_likely_label(account_no):
-        account_no = ''
-    metadata['account_no'] = account_no
+        account_no = ""
+    metadata["account_no"] = account_no
 
     # Extract Business Unit
     business_match = BUSINESS_UNIT_PATTERN.search(text)
-    metadata['business_unit'] = business_match.group(1).strip() if business_match else ''
+    metadata["business_unit"] = business_match.group(1).strip() if business_match else ""
 
     # Extract Product Name
     product_match = PRODUCT_NAME_PATTERN.search(text)
-    product_name = product_match.group(1).strip() if product_match else ''
+    product_name = product_match.group(1).strip() if product_match else ""
     if is_likely_label(product_name):
-        product_name = ''
+        product_name = ""
     # Strip currency suffix if present (e.g., "Britama-IDR" -> "Britama")
-    if product_name.endswith('-IDR'):
+    if product_name.endswith("-IDR"):
         product_name = product_name[:-4]
-    metadata['product_name'] = product_name
+    metadata["product_name"] = product_name
 
     # Extract Statement Date
     date_match = STATEMENT_DATE_PATTERN.search(text)
-    metadata['statement_date'] = date_match.group(1).strip() if date_match else ''
+    metadata["statement_date"] = date_match.group(1).strip() if date_match else ""
 
     # Extract Valuta (Currency)
     valuta_match = VALUTA_PATTERN.search(text)
-    metadata['valuta'] = valuta_match.group(1).strip() if valuta_match else ''
+    metadata["valuta"] = valuta_match.group(1).strip() if valuta_match else ""
 
     # Extract Unit Address (combines multiple lines)
     address_match = UNIT_ADDRESS_PATTERN.search(text)
@@ -211,18 +218,18 @@ def extract_metadata(text: str) -> Dict[str, str]:
         # Get the address and clean up whitespace
         address = address_match.group(1).strip()
         # Replace newlines with spaces and clean up using compiled pattern
-        address = _sub_whitespace(' ', address)
+        address = _sub_whitespace(" ", address)
         # Skip if it looks like a label
         if not is_likely_label(address):
-            metadata['unit_address'] = address
+            metadata["unit_address"] = address
         else:
-            metadata['unit_address'] = ''
+            metadata["unit_address"] = ""
     else:
-        metadata['unit_address'] = ''
+        metadata["unit_address"] = ""
 
     # Extract Transaction Period
     period_match = TRANSACTION_PERIOD_PATTERN.search(text)
-    metadata['transaction_period'] = period_match.group(1).strip() if period_match else ''
+    metadata["transaction_period"] = period_match.group(1).strip() if period_match else ""
 
     return metadata
 
@@ -246,7 +253,7 @@ def extract_transactions(text: str) -> List[Dict[str, str]]:
         List of dicts with keys: date, description, user, debit, credit, balance
     """
     transactions = []
-    lines = text.split('\n')
+    lines = text.split("\n")
     i = 0
 
     # Cache compiled patterns for hot loop optimization
@@ -254,7 +261,7 @@ def extract_transactions(text: str) -> List[Dict[str, str]]:
     _amount_match = _AMOUNT_PATTERN.match
     _user_id_match = _USER_ID_PATTERN.match
     _numeric_line_match = _NUMERIC_LINE_PATTERN.match
-    _date_only_match = re.compile(r'^(\d{2}/\d{2}/\d{2})').match
+    _date_only_match = re.compile(r"^(\d{2}/\d{2}/\d{2})").match
 
     while i < len(lines):
         line = lines[i].strip()
@@ -285,7 +292,7 @@ def extract_transactions(text: str) -> List[Dict[str, str]]:
                     if next_line:
                         description_lines.append(next_line)
                     i += 1
-                description = ' '.join(description_lines)
+                description = " ".join(description_lines)
 
                 # Move to next field (could be user ID or debit)
                 while i < len(lines) and not lines[i].strip():
@@ -308,41 +315,41 @@ def extract_transactions(text: str) -> List[Dict[str, str]]:
                     # Skip to debit
                     while i < len(lines) and not lines[i].strip():
                         i += 1
-                    debit = lines[i].strip() if i < len(lines) else ''
+                    debit = lines[i].strip() if i < len(lines) else ""
                     i += 1
                     while i < len(lines) and not lines[i].strip():
                         i += 1
-                    credit = lines[i].strip() if i < len(lines) else ''
+                    credit = lines[i].strip() if i < len(lines) else ""
                     i += 1
                     while i < len(lines) and not lines[i].strip():
                         i += 1
-                    balance = lines[i].strip() if i < len(lines) else ''
+                    balance = lines[i].strip() if i < len(lines) else ""
                 elif is_amount:
                     # Format without user ID - next field is debit
-                    user = ''
+                    user = ""
                     debit = next_field
                     i += 1
                     while i < len(lines) and not lines[i].strip():
                         i += 1
-                    credit = lines[i].strip() if i < len(lines) else ''
+                    credit = lines[i].strip() if i < len(lines) else ""
                     i += 1
                     while i < len(lines) and not lines[i].strip():
                         i += 1
-                    balance = lines[i].strip() if i < len(lines) else ''
+                    balance = lines[i].strip() if i < len(lines) else ""
                 else:
                     # Fallback - assume user ID
                     user = next_field
-                    debit = ''
-                    credit = ''
-                    balance = ''
+                    debit = ""
+                    credit = ""
+                    balance = ""
 
                 transaction = {
-                    'date': date,
-                    'description': description,
-                    'user': user,
-                    'debit': debit,
-                    'credit': credit,
-                    'balance': balance
+                    "date": date,
+                    "description": description,
+                    "user": user,
+                    "debit": debit,
+                    "credit": credit,
+                    "balance": balance,
                 }
                 transactions.append(transaction)
             else:
@@ -367,7 +374,7 @@ def _format_number_for_csv(value: str) -> str:
         Clean number string without thousand separators
     """
     if not value or not value.strip():
-        return ''
+        return ""
 
     # Check if it looks like a number (contains digits and optionally . or ,)
     if not any(c.isdigit() for c in value):
@@ -377,10 +384,10 @@ def _format_number_for_csv(value: str) -> str:
     original = value.strip()
 
     # Check if both comma and period present
-    if ',' in original and '.' in original:
+    if "," in original and "." in original:
         # Determine which is decimal separator by position
-        comma_pos = original.rfind(',')
-        period_pos = original.rfind('.')
+        comma_pos = original.rfind(",")
+        period_pos = original.rfind(".")
 
         if comma_pos > period_pos:
             # Comma is after period - comma is decimal separator (Indonesian format)
@@ -390,15 +397,15 @@ def _format_number_for_csv(value: str) -> str:
             # Period is after comma - period is decimal separator (US format)
             # Example: 1,234,567.89
             # Remove commas (thousand separators)
-            cleaned = original.replace(',', '')
+            cleaned = original.replace(",", "")
             try:
                 parsed = float(cleaned)
             except ValueError:
                 return original
-    elif ',' in original:
+    elif "," in original:
         # Only comma present - US format with comma as thousand separator
         # Example: 1,000,000
-        cleaned = original.replace(',', '')
+        cleaned = original.replace(",", "")
         try:
             parsed = float(cleaned)
         except ValueError:
@@ -412,8 +419,8 @@ def _format_number_for_csv(value: str) -> str:
 
     # Format as standard number without thousand separators
     # Remove trailing .00 if it was an integer
-    formatted = f'{parsed:.2f}'
-    if formatted.endswith('.00'):
+    formatted = f"{parsed:.2f}"
+    if formatted.endswith(".00"):
         formatted = formatted[:-3]
     return formatted
 
@@ -428,12 +435,12 @@ def save_metadata_csv(metadata: Dict[str, str], output_path: str) -> None:
         metadata: Dict of metadata fields
         output_path: Path where CSV file will be written
     """
-    with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.writer(csvfile, delimiter=';')
-        writer.writerow(['Field', 'Value'])
+    with open(output_path, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile, delimiter=";")
+        writer.writerow(["Field", "Value"])
         for field, value in metadata.items():
             # Format numeric values
-            formatted_value = _format_number_for_csv(value) if value else ''
+            formatted_value = _format_number_for_csv(value) if value else ""
             writer.writerow([field, formatted_value])
 
 
@@ -450,26 +457,28 @@ def save_transactions_csv(transactions: List[Dict[str, str]], output_path: str) 
     """
     if not transactions:
         # Write empty CSV with headers
-        with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.writer(csvfile, delimiter=';')
-            writer.writerow(['Date', 'Description', 'User', 'Debit', 'Credit', 'Balance'])
+        with open(output_path, "w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile, delimiter=";")
+            writer.writerow(["Date", "Description", "User", "Debit", "Credit", "Balance"])
         return
 
-    fieldnames = ['Date', 'Description', 'User', 'Debit', 'Credit', 'Balance']
+    fieldnames = ["Date", "Description", "User", "Debit", "Credit", "Balance"]
 
-    with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=';')
+    with open(output_path, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
         writer.writeheader()
 
         for txn in transactions:
-            writer.writerow({
-                'Date': txn.get('date', ''),
-                'Description': txn.get('description', ''),
-                'User': txn.get('user', ''),
-                'Debit': _format_number_for_csv(txn.get('debit', '')),
-                'Credit': _format_number_for_csv(txn.get('credit', '')),
-                'Balance': _format_number_for_csv(txn.get('balance', ''))
-            })
+            writer.writerow(
+                {
+                    "Date": txn.get("date", ""),
+                    "Description": txn.get("description", ""),
+                    "User": txn.get("user", ""),
+                    "Debit": _format_number_for_csv(txn.get("debit", "")),
+                    "Credit": _format_number_for_csv(txn.get("credit", "")),
+                    "Balance": _format_number_for_csv(txn.get("balance", "")),
+                }
+            )
 
 
 def is_valid_parse(metadata: Dict[str, str], transactions: List[Dict[str, str]]) -> bool:
@@ -494,7 +503,7 @@ def is_valid_parse(metadata: Dict[str, str], transactions: List[Dict[str, str]])
 
     # Check each transaction has date and balance fields
     for txn in transactions:
-        if not txn.get('date') or not txn.get('balance'):
+        if not txn.get("date") or not txn.get("balance"):
             return False
 
     return True
@@ -510,9 +519,9 @@ def ensure_output_dirs(config: Optional[Dict[str, str]] = None) -> None:
     if config is None:
         config = load_config()
 
-    output_dir = Path(config['output_dir'])
-    (output_dir / 'metadata').mkdir(parents=True, exist_ok=True)
-    (output_dir / 'transactions').mkdir(parents=True, exist_ok=True)
+    output_dir = Path(config["output_dir"])
+    (output_dir / "metadata").mkdir(parents=True, exist_ok=True)
+    (output_dir / "transactions").mkdir(parents=True, exist_ok=True)
 
 
 def parse_indonesian_number(value: str) -> float:
@@ -532,7 +541,7 @@ def parse_indonesian_number(value: str) -> float:
         return 0.0
 
     # Remove thousands separators (dots) and replace decimal comma with dot
-    cleaned = value.strip().replace('.', '').replace(',', '.')
+    cleaned = value.strip().replace(".", "").replace(",", ".")
     try:
         return float(cleaned)
     except ValueError:
@@ -562,13 +571,13 @@ def extract_summary_totals(text: str) -> Dict[str, Optional[str]]:
             - closing_balance: Value from PDF summary or None if not found
     """
     result: Dict[str, Optional[str]] = {
-        'total_debit': None,
-        'total_credit': None,
-        'opening_balance': None,
-        'closing_balance': None,
+        "total_debit": None,
+        "total_credit": None,
+        "opening_balance": None,
+        "closing_balance": None,
     }
 
-    lines = text.split('\n')
+    lines = text.split("\n")
     n = len(lines)
 
     # Cache compiled patterns for hot loop optimization
@@ -599,7 +608,7 @@ def extract_summary_totals(text: str) -> Dict[str, Optional[str]]:
             line = lines[i].strip()
             if _numeric_line_match(line):
                 values.append((i, line))
-            elif line and not _numeric_only_match(line):
+            elif line:
                 # If we hit a non-number line, might be end of values section
                 if len(values) >= 2:
                     break
@@ -619,23 +628,23 @@ def extract_summary_totals(text: str) -> Dict[str, Optional[str]]:
                         break
 
     # Fallback: try original patterns for inline format (now using compiled patterns)
-    if result['total_debit'] is None:
+    if result["total_debit"] is None:
         match = TOTAL_TRANSaksi_DEBET_PATTERN.search(text)
         if match:
-            result['total_debit'] = match.group(1).strip()
+            result["total_debit"] = match.group(1).strip()
         else:
             match = TOTAL_DEBIT_TRANSACTION_PATTERN.search(text)
             if match:
-                result['total_debit'] = match.group(1).strip()
+                result["total_debit"] = match.group(1).strip()
 
-    if result['total_credit'] is None:
+    if result["total_credit"] is None:
         match = TOTAL_TRANSaksi_KREDIT_PATTERN.search(text)
         if match:
-            result['total_credit'] = match.group(1).strip()
+            result["total_credit"] = match.group(1).strip()
         else:
             match = TOTAL_CREDIT_TRANSACTION_PATTERN.search(text)
             if match:
-                result['total_credit'] = match.group(1).strip()
+                result["total_credit"] = match.group(1).strip()
 
     return result
 
@@ -652,7 +661,7 @@ def calculate_debit_sum(transactions: List[Dict[str, str]]) -> float:
     """
     total = 0.0
     for txn in transactions:
-        debit = txn.get('debit', '')
+        debit = txn.get("debit", "")
         total += parse_indonesian_number(debit)
     return total
 
@@ -669,15 +678,13 @@ def calculate_credit_sum(transactions: List[Dict[str, str]]) -> float:
     """
     total = 0.0
     for txn in transactions:
-        credit = txn.get('credit', '')
+        credit = txn.get("credit", "")
         total += parse_indonesian_number(credit)
     return total
 
 
 def verify_turnover(
-    transactions: List[Dict[str, str]],
-    tolerance: float = 0.01,
-    summary_text: str = ""
+    transactions: List[Dict[str, str]], tolerance: float = 0.01, summary_text: str = ""
 ) -> Dict[str, object]:
     """
     Verify turnover totals by comparing PDF summary totals against calculated sums.
@@ -712,8 +719,16 @@ def verify_turnover(
     calculated_credit = calculate_credit_sum(transactions)
 
     # Parse extracted values
-    extracted_debit = parse_indonesian_number(summary_totals['total_debit']) if summary_totals['total_debit'] else None
-    extracted_credit = parse_indonesian_number(summary_totals['total_credit']) if summary_totals['total_credit'] else None
+    extracted_debit = (
+        parse_indonesian_number(summary_totals["total_debit"])
+        if summary_totals["total_debit"]
+        else None
+    )
+    extracted_credit = (
+        parse_indonesian_number(summary_totals["total_credit"])
+        if summary_totals["total_credit"]
+        else None
+    )
 
     # Compare debit totals
     debit_match = False
@@ -730,31 +745,31 @@ def verify_turnover(
         credit_match = credit_discrepancy <= tolerance
 
     # Determine overall status
-    if summary_totals['total_debit'] is None and summary_totals['total_credit'] is None:
-        status = 'not_available'
-        message = 'Summary totals not found in PDF - verification not applicable'
+    if summary_totals["total_debit"] is None and summary_totals["total_credit"] is None:
+        status = "not_available"
+        message = "Summary totals not found in PDF - verification not applicable"
     elif debit_match and credit_match:
-        status = 'passed'
-        message = 'All turnover totals match within tolerance'
+        status = "passed"
+        message = "All turnover totals match within tolerance"
     else:
-        status = 'failed'
+        status = "failed"
         mismatch_parts = []
         if extracted_debit is not None and not debit_match:
-            mismatch_parts.append(f'debit discrepancy: {debit_discrepancy:,.2f}')
+            mismatch_parts.append(f"debit discrepancy: {debit_discrepancy:,.2f}")
         if extracted_credit is not None and not credit_match:
-            mismatch_parts.append(f'credit discrepancy: {credit_discrepancy:,.2f}')
-        message = f'Turnover mismatch - {", ".join(mismatch_parts)}'
+            mismatch_parts.append(f"credit discrepancy: {credit_discrepancy:,.2f}")
+        message = f"Turnover mismatch - {', '.join(mismatch_parts)}"
 
     return {
-        'passed': status == 'passed',
-        'debit_match': debit_match,
-        'credit_match': credit_match,
-        'total_debit_extracted': summary_totals['total_debit'],
-        'total_debit_calculated': calculated_debit,
-        'debit_discrepancy': debit_discrepancy,
-        'total_credit_extracted': summary_totals['total_credit'],
-        'total_credit_calculated': calculated_credit,
-        'credit_discrepancy': credit_discrepancy,
-        'status': status,
-        'message': message
+        "passed": status == "passed",
+        "debit_match": debit_match,
+        "credit_match": credit_match,
+        "total_debit_extracted": summary_totals["total_debit"],
+        "total_debit_calculated": calculated_debit,
+        "debit_discrepancy": debit_discrepancy,
+        "total_credit_extracted": summary_totals["total_credit"],
+        "total_credit_calculated": calculated_credit,
+        "credit_discrepancy": credit_discrepancy,
+        "status": status,
+        "message": message,
     }

@@ -27,14 +27,26 @@ from pdfparser.utils import (
 class TestExtractMetadata:
     """Tests for extract_metadata() function using hypothesis."""
 
-    @given(metadata_text=text(alphabet='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n:.,-', min_size=0, max_size=1000))
+    @given(
+        metadata_text=text(
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n:.,-",
+            min_size=0,
+            max_size=1000,
+        )
+    )
     @settings(max_examples=50)
     def test_extract_metadata_returns_dict(self, metadata_text):
         """Verify extract_metadata always returns a dict."""
         result = extract_metadata(metadata_text)
         assert isinstance(result, dict)
 
-    @given(metadata_text=text(alphabet='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n:.,-', min_size=0, max_size=500))
+    @given(
+        metadata_text=text(
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n:.,-",
+            min_size=0,
+            max_size=500,
+        )
+    )
     @settings(max_examples=30)
     def test_extract_metadata_values_are_strings(self, metadata_text):
         """Verify all metadata values are strings."""
@@ -42,7 +54,7 @@ class TestExtractMetadata:
         for key, value in result.items():
             assert isinstance(value, str), f"Value for key '{key}' is not a string"
 
-    @given(account_no=text(alphabet='0123456789', min_size=1, max_size=20))
+    @given(account_no=text(alphabet="0123456789", min_size=1, max_size=20))
     @settings(max_examples=10)
     def test_account_no_pattern_matches_digits(self, account_no):
         """Verify Account No pattern matches numeric strings."""
@@ -56,14 +68,26 @@ class TestExtractMetadata:
 class TestExtractTransactions:
     """Tests for extract_transactions() function using hypothesis."""
 
-    @given(transaction_text=text(alphabet='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n/:-', min_size=0, max_size=2000))
+    @given(
+        transaction_text=text(
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n/:-",
+            min_size=0,
+            max_size=2000,
+        )
+    )
     @settings(max_examples=50)
     def test_extract_transactions_returns_list(self, transaction_text):
         """Verify extract_transactions always returns a list."""
         result = extract_transactions(transaction_text)
         assert isinstance(result, list)
 
-    @given(transaction_text=text(alphabet='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n/:-', min_size=0, max_size=1000))
+    @given(
+        transaction_text=text(
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n/:-",
+            min_size=0,
+            max_size=1000,
+        )
+    )
     @settings(max_examples=30)
     def test_extract_transactions_items_are_dicts(self, transaction_text):
         """Verify all transaction items are dictionaries."""
@@ -71,7 +95,13 @@ class TestExtractTransactions:
         for item in result:
             assert isinstance(item, dict), "Transaction item is not a dict"
 
-    @given(transaction_text=text(alphabet='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n/:-', min_size=0, max_size=500))
+    @given(
+        transaction_text=text(
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n/:-",
+            min_size=0,
+            max_size=500,
+        )
+    )
     @settings(max_examples=20)
     def test_extract_transactions_keys_are_strings(self, transaction_text):
         """Verify all transaction dict keys are strings."""
@@ -84,7 +114,7 @@ class TestExtractTransactions:
 class TestTransactionDatePattern:
     """Tests for transaction date regex pattern using hypothesis."""
 
-    @given(date_str=st.from_regex(r'\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}', fullmatch=True))
+    @given(date_str=st.from_regex(r"\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}", fullmatch=True))
     @settings(max_examples=20)
     def test_transaction_date_pattern_matches_format(self, date_str):
         """Verify pattern matches DD/MM/YY HH:MM:SS format."""
@@ -97,7 +127,7 @@ class TestTransactionDatePattern:
         """Verify pattern doesn't match invalid date formats."""
         # Only dates matching DD/MM/YY HH:MM:SS should match
         is_valid = bool(re.match(TRANSACTION_DATE_PATTERN, date_str))
-        expected = bool(re.match(r'^\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}$', date_str))
+        expected = bool(re.match(r"^\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}$", date_str))
         # This may have false positives for other formats, which is acceptable
         # The key is that valid formats always match
         if expected:
@@ -132,7 +162,13 @@ class TestMetadataPatterns:
         compiled = re.compile(pattern)
         assert compiled is not None
 
-    @given(sample_text=text(alphabet='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n:.,-', min_size=0, max_size=200))
+    @given(
+        sample_text=text(
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n:.,-",
+            min_size=0,
+            max_size=200,
+        )
+    )
     @settings(max_examples=30)
     def test_metadata_extraction_no_crash(self, sample_text):
         """Verify extract_metadata handles any input without crashing."""
@@ -143,7 +179,13 @@ class TestMetadataPatterns:
         except Exception as e:
             pytest.fail(f"extract_metadata raised exception: {e}")
 
-    @given(sample_text=text(alphabet='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n/:-', min_size=0, max_size=500))
+    @given(
+        sample_text=text(
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n/:-",
+            min_size=0,
+            max_size=500,
+        )
+    )
     @settings(max_examples=30)
     def test_transaction_extraction_no_crash(self, sample_text):
         """Verify extract_transactions handles any input without crashing."""
@@ -163,10 +205,10 @@ class TestEdgeCases:
         result = extract_metadata("")
         assert isinstance(result, dict)
         # Returns dict with all expected keys, values are empty strings
-        assert 'account_no' in result
-        assert 'business_unit' in result
-        assert 'product_name' in result
-        assert 'statement_date' in result
+        assert "account_no" in result
+        assert "business_unit" in result
+        assert "product_name" in result
+        assert "statement_date" in result
 
     def test_extract_transactions_empty_string(self):
         """Verify extract_transactions handles empty string."""
@@ -197,20 +239,20 @@ class TestLoadConfig:
     def test_load_config_has_required_keys(self):
         """Verify load_config returns dict with all required keys."""
         result = load_config()
-        assert 'source_pdf_dir' in result
-        assert 'output_dir' in result
-        assert 'test_pdfs_dir' in result
+        assert "source_pdf_dir" in result
+        assert "output_dir" in result
+        assert "test_pdfs_dir" in result
 
     def test_load_config_has_verify_turnover_key(self):
         """Verify load_config returns dict with verify_turnover key."""
         result = load_config()
-        assert 'verify_turnover' in result
+        assert "verify_turnover" in result
 
     def test_load_config_verify_turnover_default_false(self):
         """Verify verify_turnover defaults to 'false' string when not set."""
         result = load_config()
         # Should return string 'false' when not set in .env
-        assert result['verify_turnover'] == 'false'
+        assert result["verify_turnover"] == "false"
 
     def test_load_config_values_are_strings(self):
         """Verify all config values are strings."""
@@ -228,6 +270,7 @@ class TestSummaryTotalPatterns:
 
         text = "Total Transaksi Debet: 1.234.567,89"
         import re
+
         match = re.search(TOTAL_TRANSaksi_DEBET_PATTERN, text)
         assert match is not None
         assert match.group(1) == "1.234.567,89"
@@ -238,6 +281,7 @@ class TestSummaryTotalPatterns:
 
         text = "Total Debit Transaction: 987.654.321,00"
         import re
+
         match = re.search(TOTAL_DEBIT_TRANSACTION_PATTERN, text)
         assert match is not None
         assert match.group(1) == "987.654.321,00"
@@ -248,6 +292,7 @@ class TestSummaryTotalPatterns:
 
         text = "Total Transaksi Kredit: 555.123.456,78"
         import re
+
         match = re.search(TOTAL_TRANSaksi_KREDIT_PATTERN, text)
         assert match is not None
         assert match.group(1) == "555.123.456,78"
@@ -258,6 +303,7 @@ class TestSummaryTotalPatterns:
 
         text = "Total Credit Transaction: 111.222.333,44"
         import re
+
         match = re.search(TOTAL_CREDIT_TRANSACTION_PATTERN, text)
         assert match is not None
         assert match.group(1) == "111.222.333,44"
@@ -279,7 +325,7 @@ class TestExtractSummaryTotals:
 
         text = "Some text\nTotal Transaksi Debet: 1.000.000,00\nMore text"
         result = extract_summary_totals(text)
-        assert result['total_debit'] == "1.000.000,00"
+        assert result["total_debit"] == "1.000.000,00"
 
     def test_extract_summary_totals_with_credit_value(self):
         """Verify extract_summary_totals extracts Total Transaksi Kredit."""
@@ -287,7 +333,7 @@ class TestExtractSummaryTotals:
 
         text = "Some text\nTotal Transaksi Kredit: 2.500.000,50\nMore text"
         result = extract_summary_totals(text)
-        assert result['total_credit'] == "2.500.000,50"
+        assert result["total_credit"] == "2.500.000,50"
 
     def test_extract_summary_totals_english_labels(self):
         """Verify extract_summary_totals works with English labels."""
@@ -295,8 +341,8 @@ class TestExtractSummaryTotals:
 
         text = "Total Debit Transaction: 500.000,00\nTotal Credit Transaction: 750.000,25"
         result = extract_summary_totals(text)
-        assert result['total_debit'] == "500.000,00"
-        assert result['total_credit'] == "750.000,25"
+        assert result["total_debit"] == "500.000,00"
+        assert result["total_credit"] == "750.000,25"
 
     def test_extract_summary_totals_empty_when_not_found(self):
         """Verify extract_summary_totals returns empty when patterns not found."""
@@ -304,8 +350,8 @@ class TestExtractSummaryTotals:
 
         text = "No totals here"
         result = extract_summary_totals(text)
-        assert result['total_debit'] is None
-        assert result['total_credit'] is None
+        assert result["total_debit"] is None
+        assert result["total_credit"] is None
 
 
 class TestCalculateDebitSum:
@@ -331,10 +377,10 @@ class TestCalculateDebitSum:
         from pdfparser.utils import calculate_debit_sum
 
         transactions = [
-            {'debit': '100.000,00'},
-            {'debit': '200.000,50'},
-            {'debit': ''},
-            {'credit': '50.000,00'},
+            {"debit": "100.000,00"},
+            {"debit": "200.000,50"},
+            {"debit": ""},
+            {"credit": "50.000,00"},
         ]
         result = calculate_debit_sum(transactions)
         assert result == 300000.50
@@ -344,8 +390,8 @@ class TestCalculateDebitSum:
         from pdfparser.utils import calculate_debit_sum
 
         transactions = [
-            {'credit': '100.000,00'},
-            {'debit': ''},
+            {"credit": "100.000,00"},
+            {"debit": ""},
         ]
         result = calculate_debit_sum(transactions)
         assert result == 0.0
@@ -374,10 +420,10 @@ class TestCalculateCreditSum:
         from pdfparser.utils import calculate_credit_sum
 
         transactions = [
-            {'credit': '100.000,00'},
-            {'credit': '300.000,75'},
-            {'credit': ''},
-            {'debit': '50.000,00'},
+            {"credit": "100.000,00"},
+            {"credit": "300.000,75"},
+            {"credit": ""},
+            {"debit": "50.000,00"},
         ]
         result = calculate_credit_sum(transactions)
         assert result == 400000.75

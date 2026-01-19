@@ -61,13 +61,9 @@ class PDFParser:
         result = parser.parse('statement.pdf')
     """
 
-    VALID_PARSERS = ('pymupdf', 'pdfplumber', 'pypdf', 'pdfoxide')
+    VALID_PARSERS = ("pymupdf", "pdfplumber", "pypdf", "pdfoxide")
 
-    def __init__(
-        self,
-        parser: str = 'pymupdf',
-        verify_turnover: Optional[bool] = None
-    ):
+    def __init__(self, parser: str = "pymupdf", verify_turnover: Optional[bool] = None):
         """
         Initialize PDFParser with specified settings.
 
@@ -113,11 +109,7 @@ class PDFParser:
         return f"PDFParser(parser='{self.parser}', verify_turnover={self.verify_turnover})"
 
 
-def parse_pdf(
-    path: str,
-    parser: str = 'pymupdf',
-    verify_turnover: Optional[bool] = None
-) -> dict:
+def parse_pdf(path: str, parser: str = "pymupdf", verify_turnover: Optional[bool] = None) -> dict:
     """
     Parse a PDF bank statement file.
 
@@ -140,47 +132,51 @@ def parse_pdf(
     # Determine if verification should be enabled
     if verify_turnover is None:
         config = load_config()
-        should_verify = config.get('verify_turnover', '').lower() == 'true'
+        should_verify = config.get("verify_turnover", "").lower() == "true"
     else:
         should_verify = verify_turnover
 
     # Parse the PDF based on selected parser
-    if parser == 'pymupdf':
+    if parser == "pymupdf":
         result = parse_pdf_pymupdf(path)
-    elif parser == 'pdfplumber':
+    elif parser == "pdfplumber":
         result = parse_pdf_pdfplumber(path)
-    elif parser == 'pypdf':
+    elif parser == "pypdf":
         result = parse_pdf_pypdf(path)
-    elif parser == 'pdfoxide':
+    elif parser == "pdfoxide":
         result = parse_pdf_pdfoxide(path)
     else:
-        raise ValueError(f"Invalid parser: {parser}. Choose 'pymupdf', 'pdfplumber', 'pypdf', or 'pdfoxide'")
+        raise ValueError(
+            f"Invalid parser: {parser}. Choose 'pymupdf', 'pdfplumber', 'pypdf', or 'pdfoxide'"
+        )
 
     # Add verification if enabled
     if should_verify:
-        full_text = result.get('full_text', '')
-        result['verification'] = verify_turnover_func(result.get('transactions', []), summary_text=full_text)
+        full_text = result.get("full_text", "")
+        result["verification"] = verify_turnover_func(
+            result.get("transactions", []), summary_text=full_text
+        )
 
     # Remove full_text from result to keep output clean
-    result.pop('full_text', None)
+    result.pop("full_text", None)
 
     return result
 
 
 __all__ = [
-    'parse_pdf',
-    'PDFParser',
-    'parse_pdf_pymupdf',
-    'parse_pdf_pdfplumber',
-    'parse_pdf_pypdf',
-    'parse_pdf_pdfoxide',
-    'batch_parse',
-    'batch_parse_from_directory',
-    'extract_metadata',
-    'extract_transactions',
-    'save_metadata_csv',
-    'save_transactions_csv',
-    'is_valid_parse',
-    'ensure_output_dirs',
-    'load_config',
+    "parse_pdf",
+    "PDFParser",
+    "parse_pdf_pymupdf",
+    "parse_pdf_pdfplumber",
+    "parse_pdf_pypdf",
+    "parse_pdf_pdfoxide",
+    "batch_parse",
+    "batch_parse_from_directory",
+    "extract_metadata",
+    "extract_transactions",
+    "save_metadata_csv",
+    "save_transactions_csv",
+    "is_valid_parse",
+    "ensure_output_dirs",
+    "load_config",
 ]

@@ -32,18 +32,18 @@ class TestPdfoxideParser:
         # Should not raise ValueError for invalid parser
         if EXAMPLE_STATEMENT_PDF.exists():
             # Only run if test file exists
-            result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser='pdfoxide')
+            result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser="pdfoxide")
             assert isinstance(result, dict)
-            assert 'metadata' in result
-            assert 'transactions' in result
+            assert "metadata" in result
+            assert "transactions" in result
 
     def test_pdfoxide_metadata_extraction(self):
         """Verify pdfoxide parser extracts metadata fields."""
         if not EXAMPLE_STATEMENT_PDF.exists():
             pytest.skip("Test PDF not found")
 
-        result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser='pdfoxide')
-        metadata = result['metadata']
+        result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser="pdfoxide")
+        metadata = result["metadata"]
 
         # Check expected metadata keys are present
         assert isinstance(metadata, dict)
@@ -55,8 +55,8 @@ class TestPdfoxideParser:
         if not EXAMPLE_STATEMENT_PDF.exists():
             pytest.skip("Test PDF not found")
 
-        result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser='pdfoxide')
-        transactions = result['transactions']
+        result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser="pdfoxide")
+        transactions = result["transactions"]
 
         assert isinstance(transactions, list)
         # Should extract at least some transactions
@@ -65,14 +65,14 @@ class TestPdfoxideParser:
     def test_pdfoxide_error_handling_nonexistent_file(self):
         """Verify pdfoxide parser raises FileNotFoundError for missing files."""
         with pytest.raises(FileNotFoundError):
-            parse_pdf('/nonexistent/path/to/pdf.pdf', parser='pdfoxide')
+            parse_pdf("/nonexistent/path/to/pdf.pdf", parser="pdfoxide")
 
     def test_pdfoxide_error_handling_invalid_parser_name(self):
         """Verify parse_pdf raises ValueError for invalid parser name."""
         with pytest.raises(ValueError) as exc_info:
-            parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser='invalid_parser')
+            parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser="invalid_parser")
 
-        assert 'Invalid parser' in str(exc_info.value)
+        assert "Invalid parser" in str(exc_info.value)
 
 
 class TestAllParsersConsistency:
@@ -87,8 +87,8 @@ class TestAllParsersConsistency:
         result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser=parser)
 
         assert isinstance(result, dict)
-        assert 'metadata' in result
-        assert 'transactions' in result
+        assert "metadata" in result
+        assert "transactions" in result
 
     @pytest.mark.parametrize("parser", ["pymupdf", "pdfplumber", "pypdf", "pdfoxide"])
     def test_each_parser_metadata_is_dict(self, parser):
@@ -98,7 +98,7 @@ class TestAllParsersConsistency:
 
         result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser=parser)
 
-        assert isinstance(result['metadata'], dict)
+        assert isinstance(result["metadata"], dict)
 
     @pytest.mark.parametrize("parser", ["pymupdf", "pdfplumber", "pypdf", "pdfoxide"])
     def test_each_parser_transactions_is_list(self, parser):
@@ -108,7 +108,7 @@ class TestAllParsersConsistency:
 
         result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser=parser)
 
-        assert isinstance(result['transactions'], list)
+        assert isinstance(result["transactions"], list)
 
     @pytest.mark.parametrize("parser", ["pymupdf", "pdfplumber", "pypdf", "pdfoxide"])
     def test_each_parser_extracts_transactions_count(self, parser):
@@ -117,7 +117,7 @@ class TestAllParsersConsistency:
             pytest.skip("Test PDF not found")
 
         result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), parser=parser)
-        txns = result['transactions']
+        txns = result["transactions"]
 
         # At least some transactions should be extracted
         assert len(txns) >= 0
@@ -128,15 +128,15 @@ class TestIsValidParse:
 
     def test_valid_metadata_and_transactions(self):
         """Verify is_valid_parse returns True for valid results."""
-        metadata = {'account_no': '1234567890', 'business_unit': 'Test Unit'}
-        transactions = [{'date': '01/01/24', 'balance': '1000.00'}]
+        metadata = {"account_no": "1234567890", "business_unit": "Test Unit"}
+        transactions = [{"date": "01/01/24", "balance": "1000.00"}]
 
         result = is_valid_parse(metadata, transactions)
         assert result is True
 
     def test_empty_transactions_returns_false(self):
         """Verify is_valid_parse returns False for empty transactions."""
-        metadata = {'account_no': '1234567890'}
+        metadata = {"account_no": "1234567890"}
         transactions = []
 
         result = is_valid_parse(metadata, transactions)
@@ -145,7 +145,7 @@ class TestIsValidParse:
     def test_empty_metadata_returns_false(self):
         """Verify is_valid_parse returns False for empty metadata."""
         metadata = {}
-        transactions = [{'date': '01/01/24', 'balance': '1000.00'}]
+        transactions = [{"date": "01/01/24", "balance": "1000.00"}]
 
         result = is_valid_parse(metadata, transactions)
         assert result is False
@@ -171,7 +171,7 @@ class TestReportlabPdfGeneration:
             # Verify we got PDF content
             content = buffer.getvalue()
             assert len(content) > 0
-            assert b'%PDF' in content  # PDF magic bytes
+            assert b"%PDF" in content  # PDF magic bytes
 
         except ImportError:
             pytest.skip("reportlab not installed")
@@ -187,7 +187,7 @@ class TestVerifyTurnover:
 
         result = parse_pdf(str(EXAMPLE_STATEMENT_PDF))
         # By default, verification should not add a verification key
-        assert 'verification' not in result
+        assert "verification" not in result
 
     def test_parse_pdf_with_env_enabled(self, monkeypatch):
         """Verify parse_pdf includes verification when VERIFY_TURNOVER=true in .env."""
@@ -195,16 +195,19 @@ class TestVerifyTurnover:
             pytest.skip("Test PDF not found")
 
         # Set VERIFY_TURNOVER directly in environment (bypasses .env file)
-        monkeypatch.setenv('VERIFY_TURNOVER', 'true')
+        monkeypatch.setenv("VERIFY_TURNOVER", "true")
 
         # Import to get fresh config with overridden env var
         import importlib
+
         import pdfparser.utils
+
         importlib.reload(pdfparser.utils)
 
         from pdfparser.utils import load_config
+
         config = load_config()
-        assert config['verify_turnover'] == 'true'
+        assert config["verify_turnover"] == "true"
 
     def test_verify_turnover_function_returns_dict(self):
         """Verify verify_turnover function returns a dictionary."""
@@ -214,9 +217,9 @@ class TestVerifyTurnover:
         result = verify_turnover(transactions)
 
         assert isinstance(result, dict)
-        assert 'status' in result
-        assert 'passed' in result
-        assert 'message' in result
+        assert "status" in result
+        assert "passed" in result
+        assert "message" in result
 
 
 class TestVerifyTurnoverParameter:
@@ -245,14 +248,15 @@ class TestVerifyTurnoverParameter:
             pytest.skip("Test PDF not found")
 
         # Set .env to false
-        monkeypatch.setenv('VERIFY_TURNOVER', 'false')
+        monkeypatch.setenv("VERIFY_TURNOVER", "false")
         from dotenv import load_dotenv
+
         load_dotenv(override=True)
 
         # But pass True to function - should verify
         result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), verify_turnover=True)
         assert isinstance(result, dict)
-        assert 'verification' in result
+        assert "verification" in result
 
     def test_parse_pdf_verify_turnover_false_overrides_env(self, monkeypatch):
         """Verify verify_turnover=False overrides .env setting."""
@@ -260,12 +264,13 @@ class TestVerifyTurnoverParameter:
             pytest.skip("Test PDF not found")
 
         # Set .env to true
-        monkeypatch.setenv('VERIFY_TURNOVER', 'true')
+        monkeypatch.setenv("VERIFY_TURNOVER", "true")
         from dotenv import load_dotenv
+
         load_dotenv(override=True)
 
         # But pass False to function - should not verify
         result = parse_pdf(str(EXAMPLE_STATEMENT_PDF), verify_turnover=False)
         assert isinstance(result, dict)
         # Verification key should not be present when explicitly disabled
-        assert 'verification' not in result
+        assert "verification" not in result
