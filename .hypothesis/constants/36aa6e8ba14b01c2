@@ -1,4 +1,0 @@
-# file: /app/pdfparser/pymupdf_parser.py
-# hypothesis_version: 6.150.2
-
-['(\\d{10,16})', '^\\d{4}-\\d{2}-\\d{2}$', 'account_no', 'closing_balance', 'full_text', 'metadata', 'opening_balance', 'total_credit', 'total_debit', 'transactions']
