@@ -1,0 +1,4 @@
+# file: /app/pdfparser/batch.py
+# hypothesis_version: 6.150.0
+
+[0.0, 100, 500, '**/*.pdf', '.pdf', 'duration', 'error', 'failed', 'file_name', 'file_path', 'is_valid', 'memory_peak_mb', 'metadata', 'output', 'output_dir', 'pdfoxide', 'pdfplumber', 'per-file', 'per-worker', 'pymupdf', 'pypdf', 'results', 'success', 'success_rate', 'successful', 'throughput', 'total', 'transactions', 'verify_turnover']
