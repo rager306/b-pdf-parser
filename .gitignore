@@ -43,6 +43,7 @@ env/
 plan/              # Planning notes and drafts
 claude.md          # AI assistant instructions
 .env               # Environment variables (secrets)
+output/            # Output directory for parsed files
 
 # Testing
 .pytest_cache/
@@ -52,7 +53,7 @@ htmlcov/
 .hypothesis/
 
 # Code quality tools
-.ruffcache/
+.ruff_cache/
 
 # Logs
 *.log
