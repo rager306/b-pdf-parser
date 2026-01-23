@@ -84,7 +84,12 @@ def parse_pdf_pdfoxide(path: str) -> Dict[str, Any]:
         if summary.get("closing_balance"):
             metadata["closing_balance"] = summary["closing_balance"]
 
-        return {"metadata": metadata, "transactions": transactions, "full_text": all_text}
+        return {
+            "metadata": metadata,
+            "transactions": transactions,
+            "full_text": all_text,
+            "page_count": page_count,
+        }
 
     except FileNotFoundError:
         raise

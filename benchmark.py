@@ -90,6 +90,7 @@ def parse_single_pdf(args: tuple) -> Dict[str, Any]:
 
         result['success'] = is_valid_parse(metadata, transactions)
         result['transaction_count'] = len(transactions)
+        result['page_count'] = parse_result.get('page_count', 0)
 
     except FileNotFoundError:
         result['error'] = 'File not found'
@@ -306,6 +307,7 @@ def print_summary_table(aggregated: Dict[str, Dict[str, Any]]) -> None:
             metrics['failed'],
             f"{metrics['success_rate']:.1f}%",
             f"{metrics['avg_time_per_file']:.4f}s",
+            f"{metrics['avg_time_per_page']:.4f}s",
             f"{metrics['avg_transactions_per_file']:.1f}",
         ]
         table_data.append(row)
@@ -317,6 +319,7 @@ def print_summary_table(aggregated: Dict[str, Dict[str, Any]]) -> None:
         'Failed',
         'Success Rate',
         'Avg Time/File',
+        'Avg Time/Page',
         'Avg Txns/File',
     ]
 
