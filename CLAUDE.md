@@ -9,7 +9,10 @@ Indonesian Bank Statement PDF Parser - extracts metadata and transactions from I
 ## Commands
 
 ```bash
-# Setup
+# Setup (using uv)
+uv sync --extra dev
+
+# Setup (using pip)
 python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
 
 # Lint

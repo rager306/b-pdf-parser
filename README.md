@@ -34,7 +34,8 @@ git clone <repo-url>
 cd b-pdf-parser
 
 # Sync dependencies (creates .venv with Python 3.9)
-uv sync --python python3.9
+# Use --extra dev to install test and lint dependencies
+uv sync --python python3.9 --extra dev
 
 # Activate virtual environment
 source .venv/bin/activate  # On Linux/macOS

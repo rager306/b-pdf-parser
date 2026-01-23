@@ -1,0 +1,13 @@
+file_path,parser,success,transaction_count,parse_time_seconds,page_count,error
+source-pdf/Example_statement.pdf,pymupdf,True,47,0.07059979199999589,3,
+source-pdf/NEW_REKENING_KORAN_ONLINE-JAN-2024.pdf,pymupdf,True,15,0.016771961000017654,2,
+source-pdf/Example_statement.pdf,pdfoxide,False,47,0.1325263279999831,3,
+source-pdf/NEW_REKENING_KORAN_ONLINE-JAN-2024.pdf,pypdf,True,15,0.13106755299997985,2,
+source-pdf/NEW_REKENING_KORAN_ONLINE-JAN-2024.pdf,pdfoxide,False,15,0.03590931200000114,2,
+source-pdf/NEW_REKENING_KORAN_ONLINE_041901001548309_2023-11-01_2023-11-30_00291071.pdf,pymupdf,True,14,0.020220839999979034,2,
+source-pdf/NEW_REKENING_KORAN_ONLINE-JAN-2024.pdf,pdfplumber,True,15,0.5205825019999679,2,
+source-pdf/NEW_REKENING_KORAN_ONLINE_041901001548309_2023-11-01_2023-11-30_00291071.pdf,pypdf,True,14,0.12816474999999627,2,
+source-pdf/NEW_REKENING_KORAN_ONLINE_041901001548309_2023-11-01_2023-11-30_00291071.pdf,pdfoxide,False,14,0.03287078500000007,2,
+source-pdf/NEW_REKENING_KORAN_ONLINE_041901001548309_2023-11-01_2023-11-30_00291071.pdf,pdfplumber,True,14,0.4867051800000013,2,
+source-pdf/Example_statement.pdf,pypdf,True,47,0.9679196529999672,3,
+source-pdf/Example_statement.pdf,pdfplumber,True,47,2.3201006259999986,3,
