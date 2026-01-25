@@ -20,26 +20,37 @@ from dotenv import load_dotenv
 
 # Metadata extraction patterns (label-based)
 # Format varies: either "Label:\nValue" or "Label\nLabel\n:\nValue"
+# Updated to support flexible whitespace and dual-language labels
+
 ACCOUNT_NO_PATTERN: Pattern = re.compile(
-    r"No\.?\s*Rekening\s*\n(?:Account\s+No\s*\n)?\s*:?\s*([0-9]+)", re.IGNORECASE
+    r"(?:(?:No\.?\s*Rekening|Account\s+No)\s*)+[:\s]*([0-9]+)", re.IGNORECASE
 )
+
+# Supports "Unit Kerja : KCP SUCI" where "Business Unit" might be missing
 BUSINESS_UNIT_PATTERN: Pattern = re.compile(
-    r"(?:Unit\s+Kerja\s*\n)?Business\s+Unit\s*\n\s*:\s*\n\s*([^\n]+)", re.IGNORECASE
+    r"(?:(?:Unit\s+Kerja|Business\s+Unit)\s*)+[:\s]*([^\n]+)", re.IGNORECASE
 )
+
 PRODUCT_NAME_PATTERN: Pattern = re.compile(
-    r"(?:Nama\s+Produk\s*\n)?Product\s+Name\s*[:\s]*([A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)*(?:\.[A-Za-z]+)?)",
+    r"(?:(?:Nama\s+Produk|Product\s+Name)\s*)+[:\s]*([^\n]+)",
     re.IGNORECASE,
 )
-STATEMENT_DATE_PATTERN: Pattern = re.compile(r"Statement\s+Date\s*[:\s]*([^\n]+)", re.IGNORECASE)
+
+STATEMENT_DATE_PATTERN: Pattern = re.compile(
+    r"(?:(?:Tanggal\s+Laporan|Statement\s+Date)\s*)+[:\s]*([^\n]+)", re.IGNORECASE
+)
+
 VALUTA_PATTERN: Pattern = re.compile(
-    r"(?:Valuta|Currency)\s*\n(?:Currency|Valuta)?\s*\n\s*:?\s*([A-Z]{3})", re.IGNORECASE
+    r"(?:(?:Valuta|Currency)\s*)+[:\s]*([A-Z]{3})", re.IGNORECASE
 )
+
 TRANSACTION_PERIOD_PATTERN: Pattern = re.compile(
-    r"(?:Periode\s+Transaksi|Transaction\s+Period)\s*\n(?:Transaction\s+Periode|Transaction\s+Period)?\s*\n\s*:\s*\n\s*([^\n]+)",
+    r"(?:(?:Periode\s+Transaksi|Transaction\s+Period(?:e)?)\s*)+[:\s]*([^\n]+)",
     re.IGNORECASE,
 )
+
 UNIT_ADDRESS_PATTERN: Pattern = re.compile(
-    r"(?:Alamat\s+Unit\s+Kerja|Business\s+Unit\s+Address)\s*\n\s*:\s*\n\s*([A-Za-z][^\n]*(?:\s+[A-Za-z][^\n]*)?)",
+    r"(?:(?:Alamat\s+Unit\s+Kerja|Business\s+Unit\s+Address)\s*)+[:\s]*([A-Za-z][^\n]*(?:\s+[A-Za-z][^\n]*)?)",
     re.IGNORECASE,
 )
 
