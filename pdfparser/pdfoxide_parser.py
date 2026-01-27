@@ -5,12 +5,103 @@ This implementation uses the pdf_oxide library for text extraction.
 It is optimized for performance and multiprocessing safety.
 """
 
+import re
 from pathlib import Path
 from typing import Any, Dict
 
 from pdf_oxide import PdfDocument
 
 from pdfparser.utils import extract_metadata, extract_summary_totals, extract_transactions
+
+
+def preprocess_text(text: str) -> str:
+    """
+    Preprocess raw text from pdf_oxide to fix smashed fields.
+
+    pdf_oxide often extracts text line-by-line without preserving layout,
+    resulting in merged fields (e.g. "AmountAmount" or "UserAmount").
+    This function uses regex to insert spaces or newlines where appropriate.
+
+    Args:
+        text: Raw extracted text
+
+    Returns:
+        Cleaned text with better field separation
+    """
+    if not text:
+        return ""
+
+    # Fix transaction lines
+
+    # Split Date-Time from Description
+    # 02/05/25 09:38:58 Transfer -> 02/05/25 09:38:58\nTransfer
+    text = re.sub(r'(\d{2}:\d{2}:\d{2})\s+(?!AM|PM)', r'\1\n', text)
+
+    # Split Amount-Amount (smashed)
+    # Pattern: End of one amount (.00) followed immediately by start of next (digit/comma)
+    # 0.0026,000.00 -> 0.00\n26,000.00
+    # Run twice to handle chains of 3+ amounts (e.g., A.00B.00C.00) because regex consumes the overlap
+    text = re.sub(r'(\.\d{2})([\d,]+\.\d{2})', r'\1\n\2', text)
+    text = re.sub(r'(\.\d{2})([\d,]+\.\d{2})', r'\1\n\2', text)
+
+    # Split Amount-Amount (space separated)
+    # 0.00 26,000.00 -> 0.00\n26,000.00
+    # Run twice to handle chains of 3+ amounts
+    text = re.sub(r'([\d,]+\.\d{2})\s+([\d,]+\.\d{2})', r'\1\n\2', text)
+    text = re.sub(r'([\d,]+\.\d{2})\s+([\d,]+\.\d{2})', r'\1\n\2', text)
+
+    # Split User-Amount (smashed)
+    # User ID is 6-8 digits, followed by amount
+    # 88886280.00 -> 8888628\n0.00
+    text = re.sub(r'(\d{6,8})([\d,]+\.\d{2})', r'\1\n\2', text)
+
+    # Split Description-User (smashed)
+    # ...BMRIIDJA8888628 -> ...BMRIIDJA\n8888628
+    # User ID starts with digit. Only apply if followed by space (end of line or next field)
+    # to avoid splitting inside description too aggressively.
+    text = re.sub(r'([a-zA-Z])(\d{6,8})\s', r'\1\n\2 ', text)
+
+    # Split Description-User (space separated)
+    # Ensure User ID is on its own line if surrounded by spaces
+    text = re.sub(r'\s+(\d{6,8})\s', r'\n\1\n', text)
+
+    # Split Description-Amount (smashed)
+    # Ends with letter, followed by Amount
+    # ATM6,500.00 -> ATM\n6,500.00
+    text = re.sub(r'([a-zA-Z])([\d,]+\.\d{2})', r'\1\n\2', text)
+
+    # Split Description-Amount (space separated)
+    # ATM 6,500.00 -> ATM\n6,500.00
+    text = re.sub(r'([a-zA-Z])\s+([\d,]+\.\d{2})', r'\1\n\2', text)
+
+    # Fix Metadata
+
+    # Account No / Unit Kerja
+    # No. Rekening : 109701000638306Unit KerjaKC Sibuhuan -> ...306\nUnit...
+    text = re.sub(
+        r'(No\.?\s*Rekening\s*:?\s*[0-9]*)(Unit\s+Kerja)',
+        r'\1\n\2',
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    # Product Name / Address
+    # Nama Produk : ... Alamat Unit Kerja ...
+    # Need non-greedy match for product name
+    text = re.sub(
+        r'(Nama\s+Produk\s*:\s*.*?)(Alamat\s+Unit\s+Kerja)',
+        r'\1\n\2',
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    # Valuta / Currency
+    # Valuta: IDR Currency
+    text = re.sub(
+        r'(Valuta:?\s*[A-Z]{3})\s*(Currency)', r'\1\n\2', text, flags=re.IGNORECASE
+    )
+
+    return text
 
 
 def parse_pdf_pdfoxide(path: str) -> Dict[str, Any]:
@@ -56,6 +147,7 @@ def parse_pdf_pdfoxide(path: str) -> Dict[str, Any]:
         # Extract metadata from first page
         header_text = doc.extract_text(0)  # type: ignore[attr-defined]
         header_text = header_text or ""
+        header_text = preprocess_text(header_text)
         metadata = extract_metadata(header_text)
 
         # Fallback: extract account_no from filename if not found in text
@@ -71,6 +163,8 @@ def parse_pdf_pdfoxide(path: str) -> Dict[str, Any]:
         for page_num in range(page_count):
             page_text = doc.extract_text(page_num)  # type: ignore[attr-defined] or ""
             all_text += page_text + "\n"
+
+        all_text = preprocess_text(all_text)
         transactions = extract_transactions(all_text)
 
         # Extract summary totals and add to metadata
