@@ -5,12 +5,43 @@ This implementation uses the pdf_oxide library for text extraction.
 It is optimized for performance and multiprocessing safety.
 """
 
+import re
 from pathlib import Path
 from typing import Any, Dict
 
 from pdf_oxide import PdfDocument
 
 from pdfparser.utils import extract_metadata, extract_summary_totals, extract_transactions
+
+
+def preprocess_text(text: str) -> str:
+    """
+    Preprocess extracted text to fix common extraction artifacts.
+
+    Specifically handles smashed currency amounts where columns are merged.
+    Example: 0.0026,000.00 -> 0.00\n26,000.00
+
+    Args:
+        text: Raw text extracted from PDF
+
+    Returns:
+        Cleaned text with proper separation
+    """
+    if not text:
+        return ""
+
+    # Pattern for two amounts smashed together:
+    # 1. First amount: [\d,]+\.\d{2}
+    # 2. Second amount: [\d,]+\.\d{2}
+    smashed_pattern = re.compile(r"([\d,]+\.\d{2})([\d,]+\.\d{2})")
+
+    # Apply substitution twice to handle chains of 3+ amounts (e.g. A B C -> A\nB\nC)
+    # 1st pass
+    text = smashed_pattern.sub(r"\1\n\2", text)
+    # 2nd pass
+    text = smashed_pattern.sub(r"\1\n\2", text)
+
+    return text
 
 
 def parse_pdf_pdfoxide(path: str) -> Dict[str, Any]:
@@ -60,8 +91,6 @@ def parse_pdf_pdfoxide(path: str) -> Dict[str, Any]:
 
         # Fallback: extract account_no from filename if not found in text
         if not metadata.get("account_no"):
-            import re
-
             acct_match = re.search(r"(\d{10,16})", path_obj.stem)
             if acct_match:
                 metadata["account_no"] = acct_match.group(1)
@@ -71,6 +100,10 @@ def parse_pdf_pdfoxide(path: str) -> Dict[str, Any]:
         for page_num in range(page_count):
             page_text = doc.extract_text(page_num)  # type: ignore[attr-defined] or ""
             all_text += page_text + "\n"
+
+        # Preprocess text to fix artifacts (e.g. smashed columns)
+        all_text = preprocess_text(all_text)
+
         transactions = extract_transactions(all_text)
 
         # Extract summary totals and add to metadata
