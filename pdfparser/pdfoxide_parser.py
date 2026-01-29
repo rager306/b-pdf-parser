@@ -69,7 +69,7 @@ def parse_pdf_pdfoxide(path: str) -> Dict[str, Any]:
         # Extract transactions from all pages
         all_text = ""
         for page_num in range(page_count):
-            page_text = doc.extract_text(page_num)  # type: ignore[attr-defined] or ""
+            page_text = doc.extract_text(page_num) or ""  # type: ignore[attr-defined]
             all_text += page_text + "\n"
         transactions = extract_transactions(all_text)
 
