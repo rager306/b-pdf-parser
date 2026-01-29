@@ -110,6 +110,45 @@ class TestExtractTransactions:
             for key in item.keys():
                 assert isinstance(key, str), f"Key '{key}' is not a string"
 
+    def test_extract_transactions_indonesian_format(self):
+        """Verify extraction of Indonesian number format (comma decimal)."""
+        text = """
+01/01/23 12:00:00
+TRANSFER IN
+1.000.000,00
+0,00
+10.000.000,00
+"""
+        transactions = extract_transactions(text)
+
+        assert len(transactions) == 1
+        txn = transactions[0]
+
+        # Verify parsing
+        assert txn["debit"] == "1.000.000,00"
+        assert txn["credit"] == "0,00"
+        assert txn["balance"] == "10.000.000,00"
+        assert txn["user"] == ""
+
+    def test_extract_transactions_us_format(self):
+        """Verify extraction of US number format (dot decimal)."""
+        text = """
+01/01/23 12:00:00
+TRANSFER IN
+1,000,000.00
+0.00
+10,000,000.00
+"""
+        transactions = extract_transactions(text)
+
+        assert len(transactions) == 1
+        txn = transactions[0]
+
+        assert txn["debit"] == "1,000,000.00"
+        assert txn["credit"] == "0.00"
+        assert txn["balance"] == "10,000,000.00"
+        assert txn["user"] == ""
+
 
 class TestTransactionDatePattern:
     """Tests for transaction date regex pattern using hypothesis."""

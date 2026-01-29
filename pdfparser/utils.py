@@ -71,7 +71,8 @@ TOTAL_CREDIT_TRANSACTION_PATTERN: Pattern = re.compile(
 _WHITESPACE_PATTERN: Pattern = re.compile(r"\s+")
 _NUMERIC_LINE_PATTERN: Pattern = re.compile(r"^[\d,.]+\s*$")
 _NUMERIC_ONLY_PATTERN: Pattern = re.compile(r"^[\d,.]*$")
-_AMOUNT_PATTERN: Pattern = re.compile(r"^[\d,]+\.\d{2}$")
+# Support both US (1,234.56) and Indonesian (1.234,56) formats
+_AMOUNT_PATTERN: Pattern = re.compile(r"^(?:[\d,]+\.\d{2}|[\d.]+\,\d{2})$")
 _USER_ID_PATTERN: Pattern = re.compile(r"^\d{6,8}$")
 
 # Summary section label patterns (compiled for extract_summary_totals)
