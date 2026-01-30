@@ -110,6 +110,23 @@ class TestExtractTransactions:
             for key in item.keys():
                 assert isinstance(key, str), f"Key '{key}' is not a string"
 
+    def test_extract_transactions_with_9_digit_user_id(self):
+        """Verify extraction when user ID is 9 digits (regression test)."""
+        text = """
+01/01/24 12:00:00
+Transfer Test
+123456789
+100000.00
+0.00
+500000.00
+"""
+        transactions = extract_transactions(text)
+        assert len(transactions) == 1
+        txn = transactions[0]
+        assert txn['user'] == "123456789"
+        assert txn['debit'] == "100000.00"
+        assert txn['balance'] == "500000.00"
+
 
 class TestTransactionDatePattern:
     """Tests for transaction date regex pattern using hypothesis."""

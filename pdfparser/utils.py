@@ -308,8 +308,13 @@ def extract_transactions(text: str) -> List[Dict[str, str]]:
                 is_user_id = bool(_user_id_match(next_field))
                 is_amount = bool(_amount_match(next_field))
 
-                if is_user_id:
-                    # Format with user ID
+                if is_amount:
+                    # Format without user ID - next field is debit
+                    user = ""
+                    debit = next_field
+                    i += 1
+                else:
+                    # Format with user ID (or fallback to assuming it is one)
                     user = next_field
                     i += 1
                     # Skip to debit
@@ -317,31 +322,17 @@ def extract_transactions(text: str) -> List[Dict[str, str]]:
                         i += 1
                     debit = lines[i].strip() if i < len(lines) else ""
                     i += 1
-                    while i < len(lines) and not lines[i].strip():
-                        i += 1
-                    credit = lines[i].strip() if i < len(lines) else ""
+
+                # Extract credit
+                while i < len(lines) and not lines[i].strip():
                     i += 1
-                    while i < len(lines) and not lines[i].strip():
-                        i += 1
-                    balance = lines[i].strip() if i < len(lines) else ""
-                elif is_amount:
-                    # Format without user ID - next field is debit
-                    user = ""
-                    debit = next_field
+                credit = lines[i].strip() if i < len(lines) else ""
+                i += 1
+
+                # Extract balance
+                while i < len(lines) and not lines[i].strip():
                     i += 1
-                    while i < len(lines) and not lines[i].strip():
-                        i += 1
-                    credit = lines[i].strip() if i < len(lines) else ""
-                    i += 1
-                    while i < len(lines) and not lines[i].strip():
-                        i += 1
-                    balance = lines[i].strip() if i < len(lines) else ""
-                else:
-                    # Fallback - assume user ID
-                    user = next_field
-                    debit = ""
-                    credit = ""
-                    balance = ""
+                balance = lines[i].strip() if i < len(lines) else ""
 
                 transaction = {
                     "date": date,
