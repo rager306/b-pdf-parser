@@ -62,13 +62,10 @@ def parse_pdf_pymupdf(path: str) -> Dict[str, Any]:
         if not metadata.get("account_no"):
             import re
 
-            # Match 10-16 digit number in filename, but not if it looks like part of date
+            # Match 10-16 digit number in filename
             acct_match = re.search(r"(\d{10,16})", path_obj.stem)
             if acct_match:
-                # Verify it's not a date-like pattern (e.g., 2024-01-15)
-                potential_acct = acct_match.group(1)
-                if not re.match(r"^\d{4}-\d{2}-\d{2}$", potential_acct):
-                    metadata["account_no"] = potential_acct
+                metadata["account_no"] = acct_match.group(1)
 
         # Extract transactions from all pages
         all_text = ""
